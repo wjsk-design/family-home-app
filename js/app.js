@@ -186,6 +186,8 @@ window.App = window.App || {};
       render();
       // LIFF準備後に世帯データを取得(未設定・未参加なら何もしない)
       if (App.sync && App.sync.init) App.sync.init();
+      // 開いている間、相手の変更を定期的に取りに行く(画面が裏のあいだは休止)
+      if (App.sync && App.sync.startPolling) App.sync.startPolling();
     });
   });
 })();

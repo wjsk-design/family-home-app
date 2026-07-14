@@ -113,6 +113,23 @@ window.App = window.App || {};
       }, 1500);
     },
 
+    // 画面を開いている間、相手の変更を定期的に取りに行く(20秒間隔)。
+    // 画面が裏に回っているあいだは止めてバッテリー・通信を節約し、
+    // 前面に戻った瞬間にも1回取得する。世帯未参加・LINE未接続なら中身は何もしない。
+    _pollTimer: null,
+    startPolling() {
+      if (this._pollTimer) return;
+      const POLL_MS = 20000;
+      const tick = () => {
+        if (document.hidden || !this.enabled() || this._pushing || this._applyingRemote) return;
+        this.pull()
+          .then((r) => { if (r && r.updated && App.refresh) App.refresh(); })
+          .catch(() => { /* オフライン等は無視、次回に任せる */ });
+      };
+      this._pollTimer = setInterval(tick, POLL_MS);
+      document.addEventListener("visibilitychange", () => { if (!document.hidden) tick(); });
+    },
+
     // 起動時: ローカル表示のあとに非同期でpull
     async init() {
       if (!this.enabled()) return;
