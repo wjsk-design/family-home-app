@@ -367,12 +367,13 @@ App.screens = App.screens || {};
         const eventsWrap = App.el("div", { class: "cal-day__events" });
         dayEvents.slice(0, MAX_CHIPS).forEach((e) => {
           const c = App.paletteColor(e.color || 0);
+          // 応援チームの試合はホーム/アウェイをひと目で区別:ホーム=塗りつぶし、アウェイ=縁取り
+          const isAway = e.kind === "match" && e.venue === "away";
+          const style = isAway
+            ? `background: transparent; border: 1px solid ${c.fg}; color: ${c.fg};`
+            : `background: ${c.bg}; color: ${c.fg};`;
           eventsWrap.appendChild(
-            App.el("span", {
-              class: "cal-day__chip",
-              style: `background: ${c.bg}; color: ${c.fg};`,
-              text: clipChars(e.title, 4),
-            })
+            App.el("span", { class: "cal-day__chip", style, text: clipChars(e.title, 4) })
           );
         });
 
@@ -407,7 +408,11 @@ App.screens = App.screens || {};
             ev.title,
             ev.memo ? App.el("span", { class: "schedule-item__memo", text: ev.memo }) : null,
           ]);
-          const dot = App.el("span", { class: "schedule-item__dot", style: `color: ${App.paletteColor(ev.color || 0).fg};` });
+          const isAway = ev.kind === "match" && ev.venue === "away";
+          const dot = App.el("span", {
+            class: "schedule-item__dot" + (isAway ? " schedule-item__dot--away" : ""),
+            style: `color: ${App.paletteColor(ev.color || 0).fg};`,
+          });
           dayCard.appendChild(
             App.el("button", {
               class: "schedule-item",

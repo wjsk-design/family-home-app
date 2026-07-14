@@ -63,6 +63,11 @@
   flex-shrink: 0;
   background: currentColor;
 }
+/* 応援チームの試合:ホーム=塗りつぶし(上のデフォルト)、アウェイ=縁取りのみでひと目で区別 */
+.schedule-item__dot--away {
+  background: transparent;
+  border: 1.5px solid currentColor;
+}
 .schedule-item__title { flex: 1; font-weight: 500; min-width: 0; }
 .schedule-item__note-icon {
   color: var(--color-text-muted);

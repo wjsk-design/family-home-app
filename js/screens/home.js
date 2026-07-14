@@ -64,7 +64,11 @@ App.screens.home = {
           ev.title,
           ev.memo ? App.el("span", { class: "schedule-item__note-icon", html: App.icon("note", 13) }) : null,
         ]);
-        const dot = App.el("span", { class: "schedule-item__dot", style: `color: ${App.paletteColor(ev.color || 0).fg};` });
+        const isAway = ev.kind === "match" && ev.venue === "away";
+        const dot = App.el("span", {
+          class: "schedule-item__dot" + (isAway ? " schedule-item__dot--away" : ""),
+          style: `color: ${App.paletteColor(ev.color || 0).fg};`,
+        });
         scheduleCard.appendChild(
           App.el("button", {
             class: "schedule-item",
