@@ -207,6 +207,7 @@ window.App = window.App || {};
           .sort((a, b) => (a.due || "").localeCompare(b.due || ""))
           .forEach((x) =>
             list.push({
+              id: "task-" + x.id,
               cat: "task", icon: "check", title: x.title,
               meta: x.due < t ? `期限切れ(${App.fmtDate(x.due)})` : "今日まで",
               route: "tasks",
@@ -219,6 +220,7 @@ window.App = window.App || {};
         const isMatch = e.kind === "match";
         if (isMatch ? !on("match") : !on("event")) return;
         list.push({
+          id: "event-" + e.id,
           cat: isMatch ? "match" : "event",
           icon: isMatch ? "heart" : "calendar",
           title: e.title.replace(/^⚽\s*/, ""),
@@ -231,6 +233,7 @@ window.App = window.App || {};
       if (on("plant")) {
         this.plantCareItems().forEach((p) =>
           list.push({
+            id: p.id,
             cat: "plant", icon: p.kind === "water" ? "drop" : "leaf",
             title: p.title, meta: p.meta, route: "plants",
           })
@@ -244,6 +247,7 @@ window.App = window.App || {};
           .filter((e) => e.kind === "match" && e.date === tomorrow)
           .forEach((e) =>
             list.push({
+              id: "event-" + e.id,
               cat: "match", icon: "heart",
               title: e.title.replace(/^⚽\s*/, ""),
               meta: `明日 ${e.time || ""}`.trim(),
@@ -253,6 +257,19 @@ window.App = window.App || {};
       }
 
       return list;
+    },
+
+    // 未読(まだお知らせを開いて確認していない)件数。バッジ表示に使う。
+    notifUnseenCount() {
+      const seen = new Set((store.state.settings && store.state.settings.notifSeen) || []);
+      return this.notifications().filter((n) => !seen.has(n.id)).length;
+    },
+
+    // お知らせを開いたとき、いま出ている項目を既読にする(=同時に古いIDを掃除)。
+    markNotificationsSeen() {
+      store.update((st) => {
+        st.settings.notifSeen = App.data.notifications().map((n) => n.id);
+      });
     },
   };
 

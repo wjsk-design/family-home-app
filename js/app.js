@@ -57,6 +57,8 @@ window.App = window.App || {};
       })
     );
     const s = App.sheet("お知らせ", content);
+    // 開いた=確認したとみなし、いまの項目を既読に(バッジは未読件数だけ残す)
+    App.data.markNotificationsSeen();
   };
 
   // ---- ヘッダー ----
@@ -84,10 +86,10 @@ window.App = window.App || {};
           ]),
           App.el("div", { class: "greeting__actions" }, [
             (() => {
-              const count = App.data.notifications().length;
+              const count = App.data.notifUnseenCount();
               return App.el("button", {
                 class: "icon-btn notif-btn",
-                "aria-label": count ? `お知らせ ${count}件` : "お知らせ",
+                "aria-label": count ? `お知らせ 未読${count}件` : "お知らせ",
                 onclick: App.openNotifications,
               }, [
                 App.el("span", { style: "display: flex;", html: App.icon("bell", 22) }),
