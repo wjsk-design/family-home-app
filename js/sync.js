@@ -158,6 +158,7 @@ window.App = window.App || {};
           st.settings.favoriteTeam = data.settings.favoriteTeam;
         }
         st.isMockData = false;
+        App.migrateMatchColors(st);
       });
     },
     _saveHousehold(r) {
