@@ -415,6 +415,23 @@
   transition: border-color var(--t-fast);
 }
 .field textarea { min-height: 96px; resize: vertical; line-height: var(--line-height); }
+/* iOS Safari/LINE内ブラウザの日付・時刻入力は、既定でネイティブ装飾が付き
+   値(::-webkit-date-and-time-value)が中央寄せになって他の入力と揃わないため、
+   装飾をリセットして左寄せに統一する */
+.field input[type="date"],
+.field input[type="time"] {
+  -webkit-appearance: none;
+  appearance: none;
+  text-align: left;
+}
+.field input[type="date"]::-webkit-date-and-time-value,
+.field input[type="time"]::-webkit-date-and-time-value {
+  text-align: left;
+  margin: 0;
+}
+.field input[type="date"]::-webkit-calendar-picker-indicator {
+  margin-left: auto;
+}
 .field input:focus, .field textarea:focus {
   outline: none;
   border-color: var(--color-primary);
