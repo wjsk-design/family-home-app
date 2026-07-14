@@ -182,7 +182,7 @@ App.screens.home = {
       { label: "AIに相談", sub: "気軽にどうぞ", icon: "sparkle", cat: "ai", route: "ai" },
     ];
     const quickSection = App.el("section", { class: "section" }, [
-      App.sectionHeader("メニュー", { icon: "menu" }),
+      App.sectionHeader("きろく・そうだん", { icon: "note" }),
     ]);
     const grid = App.el("div", { class: "quick-grid" });
     quick.forEach((q) => {

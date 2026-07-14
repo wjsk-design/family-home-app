@@ -142,7 +142,19 @@ App.screens = App.screens || {};
         ...plantItems.map((p) => ({ __plant: true, item: p })),
         ...todayTasks.map((t) => ({ __plant: false, item: t })),
       ];
-      bucket("今日", todayItems, (row) => {
+
+      // 未対応が無く、完了だけが残っているときはねぎらいを出す
+      if (todayItems.length + upcoming.length + someday.length === 0 && done.length > 0) {
+        container.appendChild(
+          App.el("section", { class: "section" }, [
+            App.el("div", { class: "card card--lg" }, [
+              App.emptyState("checkCircle", "やること、ぜんぶ完了!", "今日もおつかれさまでした。"),
+            ]),
+          ])
+        );
+      }
+
+      bucket(`今日(${todayItems.length})`, todayItems, (row) => {
         if (row.__plant) {
           return App.taskItem(row.item, { onToggle: App.completePlantCareItem, meta: row.item.meta });
         }
@@ -155,12 +167,12 @@ App.screens = App.screens || {};
       });
 
       // これから:未来日付
-      bucket("これから", upcoming, (t) =>
+      bucket(`これから(${upcoming.length})`, upcoming, (t) =>
         App.taskItem(t, { onToggle: toggleTask, onEdit: App.openTaskSheet, meta: App.fmtDate(t.due) })
       );
 
       // いつでも:期限なし
-      bucket("いつでも", someday, (t) =>
+      bucket(`いつでも(${someday.length})`, someday, (t) =>
         App.taskItem(t, { onToggle: toggleTask, onEdit: App.openTaskSheet })
       );
 
