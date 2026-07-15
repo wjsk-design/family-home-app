@@ -1,5 +1,5 @@
 // ============================================
-// わが家ホーム — バックエンド(Google Apps Script)
+// 暮らしnote — バックエンド(Google Apps Script)
 // 世帯データ同期。フロントの store.load()/save() から呼ばれる。
 //
 // 秘密情報はここ(スクリプトプロパティ)にだけ置く。フロント(公開リポジトリ)には置かない。
@@ -17,7 +17,7 @@ var SHEET_NAME = 'households';
 // 列: A householdId | B inviteCode | C members(JSON配列) | D data(JSON) | E updatedAt(ms)
 
 function doGet() {
-  return json({ ok: true, service: 'wagaya-home backend', ts: Date.now() });
+  return json({ ok: true, service: 'kurashi-note backend', ts: Date.now() });
 }
 
 function doPost(e) {
