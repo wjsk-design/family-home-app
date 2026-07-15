@@ -161,14 +161,20 @@ window.App = window.App || {};
     member(id) {
       return store.state.family.find((f) => f.id === id);
     },
+    // 予定がdateStrを含むか(endDateがあれば期間、無ければ単日)。
+    // 夏季休暇のような複数日にまたがる予定に対応(v0.14.6)
+    eventCoversDate(e, dateStr) {
+      return e.endDate ? (e.date <= dateStr && dateStr <= e.endDate) : e.date === dateStr;
+    },
     todayEvents() {
+      const t = today();
       return store.state.events
-        .filter((e) => e.date === today())
+        .filter((e) => this.eventCoversDate(e, t))
         .sort((a, b) => (a.time || "").localeCompare(b.time || ""));
     },
     eventsOn(dateStr) {
       return store.state.events
-        .filter((e) => e.date === dateStr)
+        .filter((e) => this.eventCoversDate(e, dateStr))
         .sort((a, b) => (a.time || "").localeCompare(b.time || ""));
     },
     todayTasks() {

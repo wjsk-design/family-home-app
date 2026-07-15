@@ -20,7 +20,9 @@ function openEventDetailSheet(ev) {
     ]);
 
   const content = [
-    row("日時", `${App.fmtDate(ev.date)} ${ev.time || "終日"}`),
+    row("日時", ev.endDate
+      ? `${App.fmtDate(ev.date)}〜${App.fmtDate(ev.endDate)}`
+      : `${App.fmtDate(ev.date)} ${ev.time || "終日"}`),
     row("だれの予定", who),
   ];
   if (ev.memo) content.push(row("メモ", ev.memo, true));
@@ -95,6 +97,7 @@ App.screens.home = {
           class: "schedule-item__dot" + (isAway ? " schedule-item__dot--away" : ""),
           style: `color: ${App.paletteColor(ev.color || 0).fg};`,
         });
+        const timeLabel = ev.endDate ? `${App.fmtDateShort(ev.date)}〜${App.fmtDateShort(ev.endDate)}` : (ev.time || "終日");
         scheduleCard.appendChild(
           App.el("button", {
             class: "schedule-item",
@@ -103,7 +106,7 @@ App.screens.home = {
             onclick: () => openEventDetailSheet(ev),
           }, [
             dot,
-            App.el("span", { class: "schedule-item__time", text: ev.time || "終日" }),
+            App.el("span", { class: "schedule-item__time", text: timeLabel }),
             title,
             App.memberBadges(ev),
           ])

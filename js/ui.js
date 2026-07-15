@@ -31,6 +31,11 @@ window.App = window.App || {};
     return weekday ? `${base}(${WD[d.getDay()]})` : base;
   };
   App.weekdayOf = (dateStr) => WD[new Date(dateStr + "T00:00:00").getDay()];
+  // 短い日付表示(例:8/10)。複数日にまたがる予定の期間表示などに使う
+  App.fmtDateShort = (dateStr) => {
+    const d = new Date(dateStr + "T00:00:00");
+    return `${d.getMonth() + 1}/${d.getDate()}`;
+  };
 
   // ---- 時間帯あいさつ ----
   App.greeting = function () {

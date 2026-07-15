@@ -147,6 +147,26 @@ App.screens = App.screens || {};
     const timeField = App.timeField("時間", time, (v) => (time = v));
     const memberChips = memberSelector(data);
 
+    // 複数日にまたがる予定(夏季休暇など)。endDateがあれば期間扱い
+    let recurWrap = null; // くり返しUIのラッパー(このあと!isEditのときだけ生成される)
+    let dayMode = data.endDate ? "range" : "single";
+    const endDateInput = App.el("input", { type: "date", value: data.endDate || data.date });
+    const endDateField = App.field("終了日", endDateInput);
+    endDateField.style.display = dayMode === "range" ? "" : "none";
+    const dayModeChips = App.chipSelect(
+      [{ value: "single", label: "1日だけ" }, { value: "range", label: "複数日にまたがる" }],
+      dayMode,
+      (v) => {
+        dayMode = v;
+        endDateField.style.display = v === "range" ? "" : "none";
+        if (recurWrap) recurWrap.style.display = v === "range" ? "none" : "";
+      }
+    );
+    // 開始日を変えたら、終了日がそれより前にならないよう追従させる
+    dateInput.addEventListener("change", () => {
+      if (endDateInput.value < dateInput.value) endDateInput.value = dateInput.value;
+    });
+
     let color = data.color || 0;
     const colorField = App.el("div", { class: "field" }, [
       App.el("span", { class: "field__label", text: "予定の色" }),
@@ -174,6 +194,8 @@ App.screens = App.screens || {};
     const content = [
       App.field("予定の名前", titleInput),
       App.field("日付", dateInput),
+      App.el("div", { class: "field" }, [dayModeChips]),
+      endDateField,
       timeField,
       App.el("div", { class: "field" }, [
         App.el("span", { class: "field__label", text: "だれの予定?" }),
@@ -184,7 +206,8 @@ App.screens = App.screens || {};
       memoField,
     ];
 
-    // くり返しは新規追加のときだけ選べる(編集は常にその回だけへの変更として扱う)
+    // くり返しは新規追加のときだけ選べる(編集は常にその回だけへの変更として扱う)。
+    // 複数日にまたがる予定との組み合わせは対象外のため、dayModeChipsでも表示を切り替える
     let recur = "none";
     let recurUntilInput = null;
     if (!isEdit) {
@@ -224,13 +247,14 @@ App.screens = App.screens || {};
       });
       recurUntilInput.addEventListener("input", () => { recurUntilInput.dataset.touched = "1"; });
 
-      content.push(
+      recurWrap = App.el("div", {}, [
         App.el("div", { class: "field" }, [
           App.el("span", { class: "field__label", text: "くり返し" }),
           recurChips,
         ]),
         recurUntilField,
-      );
+      ]);
+      content.push(recurWrap);
     }
 
     content.push(saveBtn);
@@ -271,14 +295,19 @@ App.screens = App.screens || {};
         App.toast("「いつまで」は開始日より後にしてください", "info");
         return;
       }
+      if (dayMode === "range" && endDateInput.value < dateInput.value) {
+        App.toast("終了日は開始日より後にしてください", "info");
+        return;
+      }
       s.close();
       const memo = memoInput.value.trim();
+      const endDate = dayMode === "range" ? endDateInput.value : null;
       App.store.update((st) => {
         if (isEdit) {
           const e = st.events.find((x) => x.id === ev.id);
-          if (e) Object.assign(e, { title, date: dateInput.value, time, memberIds: data.memberIds, memo, color });
+          if (e) Object.assign(e, { title, date: dateInput.value, endDate, time, memberIds: data.memberIds, memo, color });
         } else if (recur === "none") {
-          st.events.push({ id: App.uid(), title, date: dateInput.value, time, memberIds: data.memberIds, memo, color });
+          st.events.push({ id: App.uid(), title, date: dateInput.value, endDate, time, memberIds: data.memberIds, memo, color });
         } else {
           const seriesId = `series-${App.uid()}`;
           recurDates(dateInput.value, recur, recurUntilInput.value).forEach((d) => {
@@ -333,11 +362,19 @@ App.screens = App.screens || {};
         grid.appendChild(App.el("span", { class: "cal-grid__wd" + cls, text: w }));
       });
 
-      // 日付ごとの予定をまとめておく(セルごとに毎回全件走査しない)
+      // 日付ごとの予定をまとめておく(セルごとに毎回全件走査しない)。
+      // endDateがある予定(夏季休暇など複数日にまたがる予定)は、該当する
+      // すべての日に登場させる
       const eventsByDate = new Map();
+      const addOnDate = (ds, e) => {
+        if (!eventsByDate.has(ds)) eventsByDate.set(ds, []);
+        eventsByDate.get(ds).push(e);
+      };
       App.store.state.events.forEach((e) => {
-        if (!eventsByDate.has(e.date)) eventsByDate.set(e.date, []);
-        eventsByDate.get(e.date).push(e);
+        if (!e.endDate) { addOnDate(e.date, e); return; }
+        for (let d = new Date(e.date + "T00:00:00"); App.date.str(d) <= e.endDate; d.setDate(d.getDate() + 1)) {
+          addOnDate(App.date.str(d), e);
+        }
       });
 
       const first = new Date(view.year, view.month, 1);
@@ -424,6 +461,9 @@ App.screens = App.screens || {};
             class: "schedule-item__dot" + (isAway ? " schedule-item__dot--away" : ""),
             style: `color: ${App.paletteColor(ev.color || 0).fg};`,
           });
+          // 複数日にまたがる予定は、時刻の代わりに期間(8/10〜8/18)を表示して
+          // 「この日だけの予定ではない」ことが分かるようにする
+          const timeLabel = ev.endDate ? `${App.fmtDateShort(ev.date)}〜${App.fmtDateShort(ev.endDate)}` : (ev.time || "終日");
           dayCard.appendChild(
             App.el("button", {
               class: "schedule-item",
@@ -432,7 +472,7 @@ App.screens = App.screens || {};
               onclick: () => openEventSheet(ev),
             }, [
               dot,
-              App.el("span", { class: "schedule-item__time", text: ev.time || "終日" }),
+              App.el("span", { class: "schedule-item__time", text: timeLabel }),
               titleWrap,
               avatars,
             ])
