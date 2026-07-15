@@ -5,6 +5,9 @@
 // - 共有するのは family/events/tasks/shopping/plants/notes と favoriteTeam
 // - 競合は「後勝ち(updatedAt)」。起動時 pull、変更後はデバウンスして push
 // - リモート反映(import)中とpush中は自動pushを止め、往復ループを防ぐ
+// - settings.notifPrefs(通知のオン・オフ)だけは世帯共有の対象外で、
+//   pushNotifPrefs()経由でuserIdごとにサーバーへ個別送信する(LINEプッシュの
+//   毎朝ダイジェストが本人の設定に従うようにするため)
 // ============================================
 window.App = window.App || {};
 
@@ -55,6 +58,7 @@ window.App = window.App || {};
     async create() {
       const r = await this.call("create", { data: this._export() });
       this._applyRemote(() => this._saveHousehold(r));
+      this.pushNotifPrefs(); // 初回から自分の通知設定をサーバーに登録しておく
       return r;
     },
     async join(inviteCode) {
@@ -64,6 +68,7 @@ window.App = window.App || {};
         if (r.data) this._merge(r.data);
       });
       if (!r.data) await this._pushNow(); // 相手が空なら自分の内容を初期データにする
+      this.pushNotifPrefs();
       return r;
     },
     async leave() {
@@ -104,6 +109,16 @@ window.App = window.App || {};
       } finally {
         this._pushing = false;
       }
+    },
+
+    // 自分(このLINEアカウント)の通知オン・オフ設定をサーバーへ送る。
+    // 世帯の共有データとは別枠(userIdごと)なので、他メンバーの設定には影響しない。
+    // 失敗しても静かに諦める(次にトグルした時にまた送られる)
+    async pushNotifPrefs() {
+      if (!this.enabled()) return;
+      try {
+        await this.call("setNotifPrefs", { prefs: App.store.state.settings.notifPrefs || {} });
+      } catch (e) { /* オフライン等: 次回の変更時に再送 */ }
     },
 
     // store.save() から呼ばれる。無効時・リモート反映中・push中は何もしない

@@ -18,6 +18,7 @@
 var PROP = PropertiesService.getScriptProperties();
 var SHEET_NAME = 'households';
 // 列: A householdId | B inviteCode | C members(JSON配列) | D data(JSON) | E updatedAt(ms)
+//     | F memberPrefs(JSON、{userId: notifPrefs}。個人ごとの通知オン・オフ)
 
 // 毎朝ダイジェストの末尾に添えるアプリ起動リンク。js/config.jsのLIFF_IDと
 // 同じもの(ドメインliff.line.me固定)。LIFF_IDを変更したらここも変更すること
@@ -38,6 +39,7 @@ function doPost(e) {
     else if (action === 'pull') result = pull(userId);
     else if (action === 'push') result = push(userId, body.data);
     else if (action === 'leave') result = leaveHousehold(userId);
+    else if (action === 'setNotifPrefs') result = setNotifPrefs(userId, body.prefs);
     else throw new Error('unknown action: ' + action);
     return json(Object.assign({ ok: true }, result));
   } catch (err) {
@@ -78,7 +80,8 @@ function sheet() {
   return sh;
 }
 
-// 全行を読み、{row, householdId, inviteCode, members, data, updatedAt} の配列で返す(ヘッダー除く)
+// 全行を読み、{row, householdId, inviteCode, members, data, updatedAt, memberPrefs} の
+// 配列で返す(ヘッダー除く)。列F(memberPrefs)は既存シートに無くても空扱いで安全に動く
 function readAll(sh) {
   var values = sh.getDataRange().getValues();
   var out = [];
@@ -92,6 +95,7 @@ function readAll(sh) {
       members: parseJson(r[2], []),
       data: parseJson(r[3], null),
       updatedAt: Number(r[4]) || 0,
+      memberPrefs: parseJson(r[5], {}), // { userId: {task,event,plant,match} }
     });
   }
   return out;
@@ -199,6 +203,24 @@ function leaveHousehold(userId) {
   }
 }
 
+// 個人ごとの通知オン・オフ(settings.notifPrefs)をサーバーに保存する。
+// 世帯の共有dataとは別に、userIdごとの好みとしてmemberPrefsへ格納
+function setNotifPrefs(userId, prefs) {
+  var lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    var sh = sheet();
+    var target = findByUser(readAll(sh), userId);
+    if (!target) throw new Error('世帯に参加していません');
+    var allPrefs = target.memberPrefs || {};
+    allPrefs[userId] = prefs || {};
+    sh.getRange(target.row, 6).setValue(JSON.stringify(allPrefs));
+    return { ok: true };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
 // ============================================
 // 毎朝のLINEプッシュ通知(ダイジェスト)
 // フロントの App.data.notifications()(js/store.js)と同じ判定基準を
@@ -273,40 +295,51 @@ function whoSuffix(e, family) {
   return names.length ? names.join('・') : null;
 }
 
-// 世帯1件分のデータから、今日のダイジェスト文面を組み立てる(何も無ければnull)
-function buildDigestText(data, todayStr, tomorrowStr) {
+// 世帯1件分のデータから、あるメンバー向けの今日のダイジェスト文面を組み立てる
+// (何も無ければnull)。prefsは受信者本人のsettings.notifPrefs相当
+// (js/store.jsのnotifications()と同じ判定基準)
+function buildDigestText(data, todayStr, tomorrowStr, prefs) {
+  prefs = prefs || {};
+  var on = function (cat) { return prefs[cat] !== false; };
   var lines = { task: [], event: [], plant: [], match: [] };
 
-  (data.tasks || [])
-    .filter(function (x) { return !x.done && x.due && x.due <= todayStr; })
-    .sort(function (a, b) { return (a.due || '').localeCompare(b.due || ''); })
-    .forEach(function (x) {
-      var meta = x.due < todayStr ? ('期限切れ・' + fmtDateJP(x.due)) : '今日まで';
-      lines.task.push(x.title + '(' + meta + ')');
-    });
+  if (on('task')) {
+    (data.tasks || [])
+      .filter(function (x) { return !x.done && x.due && x.due <= todayStr; })
+      .sort(function (a, b) { return (a.due || '').localeCompare(b.due || ''); })
+      .forEach(function (x) {
+        var meta = x.due < todayStr ? ('期限切れ・' + fmtDateJP(x.due)) : '今日まで';
+        lines.task.push(x.title + '(' + meta + ')');
+      });
+  }
 
   (data.events || [])
     .filter(function (e) { return eventCoversDate(e, todayStr); })
     .sort(function (a, b) { return (a.time || '').localeCompare(b.time || ''); })
     .forEach(function (e) {
       var isMatch = e.kind === 'match';
+      if (isMatch ? !on('match') : !on('event')) return;
       var title = e.title.replace(/^⚽\s*/, '');
       var who = whoSuffix(e, data.family);
       var meta = '今日 ' + (e.time || '終日') + (who ? '・' + who : '');
       (isMatch ? lines.match : lines.event).push(title + '(' + meta + ')');
     });
 
-  plantCareItemsJST(data.plants, todayStr).forEach(function (p) {
-    lines.plant.push(p.title + '(' + p.meta + ')');
-  });
-
-  (data.events || [])
-    .filter(function (e) { return e.kind === 'match' && e.date === tomorrowStr; })
-    .forEach(function (e) {
-      var title = e.title.replace(/^⚽\s*/, '');
-      var who = whoSuffix(e, data.family);
-      lines.match.push(title + '(明日 ' + (e.time || '') + (who ? '・' + who : '') + ')');
+  if (on('plant')) {
+    plantCareItemsJST(data.plants, todayStr).forEach(function (p) {
+      lines.plant.push(p.title + '(' + p.meta + ')');
     });
+  }
+
+  if (on('match')) {
+    (data.events || [])
+      .filter(function (e) { return e.kind === 'match' && e.date === tomorrowStr; })
+      .forEach(function (e) {
+        var title = e.title.replace(/^⚽\s*/, '');
+        var who = whoSuffix(e, data.family);
+        lines.match.push(title + '(明日 ' + (e.time || '') + (who ? '・' + who : '') + ')');
+      });
+  }
 
   var sections = [];
   if (lines.task.length) sections.push('📋 やること\n' + lines.task.map(function (t) { return '・' + t; }).join('\n'));
@@ -332,7 +365,8 @@ function sendLinePush(userId, text, token) {
 }
 
 // 時間主導トリガーの実行対象。全世帯を見て、今日ダイジェストがある世帯だけ
-// メンバー全員にpush送信する(何も無い世帯には送らない)
+// メンバーごとに、本人の通知設定(memberPrefs)に応じた内容をpush送信する
+// (世帯共通ではなく、受信者ごとに文面が変わりうる。何も無ければ送らない)
 function sendDailyDigest() {
   var token = PROP.getProperty('MESSAGING_CHANNEL_TOKEN');
   if (!token) { Logger.log('MESSAGING_CHANNEL_TOKEN 未設定のため送信をスキップしました'); return; }
@@ -341,9 +375,10 @@ function sendDailyDigest() {
   var rows = readAll(sheet());
   rows.forEach(function (r) {
     if (!r.data || !r.members || !r.members.length) return;
-    var text = buildDigestText(r.data, todayStr, tomorrowStr);
-    if (!text) return;
     r.members.forEach(function (userId) {
+      var prefs = (r.memberPrefs && r.memberPrefs[userId]) || {};
+      var text = buildDigestText(r.data, todayStr, tomorrowStr, prefs);
+      if (!text) return;
       try { sendLinePush(userId, text, token); }
       catch (e) { Logger.log('push failed for ' + userId + ': ' + e); }
     });

@@ -328,6 +328,9 @@ App.screens = App.screens || {};
               if (!x.settings.notifPrefs) x.settings.notifPrefs = {};
               x.settings.notifPrefs[c.key] = x.settings.notifPrefs[c.key] === false;
             });
+            // ホームのベルだけでなく、LINEプッシュ(毎朝のダイジェスト)にも
+            // 本人の設定として反映されるようサーバーへ送る
+            if (App.sync && App.sync.pushNotifPrefs) App.sync.pushNotifPrefs();
           },
         });
         card.appendChild(
@@ -350,7 +353,7 @@ App.screens = App.screens || {};
           App.el("div", { class: "card card--lg" }, [
             App.el("p", {
               style: "font-size: var(--text-sub); color: var(--color-text-secondary); line-height: var(--line-height);",
-              html: "オンにした種類が、ホーム右上のベル(お知らせ)に表示されます。<br>LINEへのプッシュ通知は正式版で対応予定です。",
+              html: "オンにした種類が、ホーム右上のベル(お知らせ)と、毎朝届くLINEの通知の両方に反映されます。",
             }),
           ]),
         ])
