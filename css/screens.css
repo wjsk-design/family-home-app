@@ -199,6 +199,9 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  align-self: flex-start; /* 親(.cal-day)のalign-items:stretchでセル幅いっぱいに
+    広がり、中の数字だけ中央寄せに見えてしまうのを防ぐ。他の日付と同じ左位置で
+    数字ちょうどのサイズの丸バッジにする */
   min-width: 18px;
   height: 18px;
   border-radius: var(--radius-full);
