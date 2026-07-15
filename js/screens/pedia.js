@@ -79,7 +79,10 @@ App.screens = App.screens || {};
     p.tasks.forEach((t) => {
       calendar.appendChild(
         App.el("div", { class: "pedia-task" }, [
-          App.el("p", { class: "pedia-task__label", text: t.label }),
+          App.el("p", { class: "pedia-task__label" }, [
+            t.label,
+            t.freq ? App.el("span", { class: "pedia-task__freq", text: `頻度:${t.freq}` }) : null,
+          ]),
           monthPills(t.months),
           t.note ? App.el("p", { class: "pedia-task__note", text: t.note }) : null,
         ])

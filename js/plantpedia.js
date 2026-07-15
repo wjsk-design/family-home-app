@@ -16,7 +16,7 @@ App.PLANTPEDIA = [
     tasks: [
       { label: "植え替え", months: [5, 6, 7], note: "2年に1回が目安" },
       { label: "剪定", months: [5, 6], note: "伸びすぎた枝を切り戻す" },
-      { label: "肥料", months: [5, 6, 7, 8, 9], note: "生育期に緩効性肥料" },
+      { label: "肥料", months: [5, 6, 7, 8, 9], note: "生育期に緩効性肥料", freq: "月1回程度" },
     ],
   },
   {
@@ -26,7 +26,7 @@ App.PLANTPEDIA = [
     tasks: [
       { label: "植え替え", months: [5, 6, 7], note: "根詰まりしたら一回り大きい鉢へ" },
       { label: "剪定", months: [4, 5, 6], note: "混み合った葉・気根の整理" },
-      { label: "肥料", months: [4, 5, 6, 7, 8, 9], note: "" },
+      { label: "肥料", months: [4, 5, 6, 7, 8, 9], note: "", freq: "月1回程度" },
     ],
   },
   {
@@ -35,7 +35,7 @@ App.PLANTPEDIA = [
     tips: "耐陰性がとても強く置き場所を選ばない。直射日光で葉焼けするので注意。",
     tasks: [
       { label: "植え替え", months: [5, 6, 7], note: "2〜3年に1回" },
-      { label: "肥料", months: [5, 6, 7, 8, 9], note: "" },
+      { label: "肥料", months: [5, 6, 7, 8, 9], note: "", freq: "月1回程度" },
     ],
   },
   {
@@ -45,7 +45,7 @@ App.PLANTPEDIA = [
     tasks: [
       { label: "植え替え", months: [5, 6, 7], note: "" },
       { label: "剪定", months: [4, 5, 6], note: "樹形を整える" },
-      { label: "肥料", months: [4, 5, 6, 7, 8, 9], note: "" },
+      { label: "肥料", months: [4, 5, 6, 7, 8, 9], note: "", freq: "月1回程度" },
     ],
   },
   {
@@ -55,7 +55,7 @@ App.PLANTPEDIA = [
     tasks: [
       { label: "植え替え", months: [5, 6, 7], note: "" },
       { label: "挿し芽", months: [5, 6, 7], note: "水挿しでも発根する" },
-      { label: "肥料", months: [4, 5, 6, 7, 8, 9], note: "" },
+      { label: "肥料", months: [4, 5, 6, 7, 8, 9], note: "", freq: "月1回程度" },
     ],
   },
   {
@@ -65,7 +65,7 @@ App.PLANTPEDIA = [
     tasks: [
       { label: "植え替え", months: [5, 6, 7], note: "" },
       { label: "挿し芽", months: [5, 6, 7, 8], note: "水に挿すだけでも発根" },
-      { label: "肥料", months: [4, 5, 6, 7, 8, 9], note: "" },
+      { label: "肥料", months: [4, 5, 6, 7, 8, 9], note: "", freq: "月1回程度" },
     ],
   },
   {
@@ -74,7 +74,7 @@ App.PLANTPEDIA = [
     tips: "乾燥に非常に強く、水のやりすぎが一番の失敗原因。冬の水やりはほぼ不要。",
     tasks: [
       { label: "植え替え", months: [5, 6, 7, 8], note: "" },
-      { label: "肥料", months: [5, 6, 7, 8, 9], note: "少なめでよい" },
+      { label: "肥料", months: [5, 6, 7, 8, 9], note: "少なめでよい", freq: "1〜2ヶ月に1回、薄めで" },
     ],
   },
   {
@@ -84,7 +84,7 @@ App.PLANTPEDIA = [
     tasks: [
       { label: "植え替え", months: [5, 6, 7], note: "" },
       { label: "剪定", months: [4, 5, 6], note: "強めに切っても芽吹く" },
-      { label: "肥料", months: [4, 5, 6, 7, 8, 9], note: "" },
+      { label: "肥料", months: [4, 5, 6, 7, 8, 9], note: "", freq: "月1回程度" },
     ],
   },
   {
@@ -94,7 +94,7 @@ App.PLANTPEDIA = [
     tasks: [
       { label: "植え替え", months: [5, 6, 7], note: "" },
       { label: "剪定", months: [4, 5, 6], note: "樹形づくりは春に" },
-      { label: "肥料", months: [4, 5, 6, 7, 8, 9], note: "" },
+      { label: "肥料", months: [4, 5, 6, 7, 8, 9], note: "", freq: "月1回程度" },
     ],
   },
   {
@@ -104,7 +104,7 @@ App.PLANTPEDIA = [
     tasks: [
       { label: "植え替え", months: [5, 6, 7], note: "" },
       { label: "剪定", months: [5, 6], note: "" },
-      { label: "肥料", months: [4, 5, 6, 7, 8, 9, 10], note: "" },
+      { label: "肥料", months: [4, 5, 6, 7, 8, 9, 10], note: "", freq: "月1回程度" },
     ],
   },
   {
@@ -114,7 +114,7 @@ App.PLANTPEDIA = [
     tasks: [
       { label: "植え替え", months: [3, 4, 9, 10], note: "真夏・真冬は避ける" },
       { label: "剪定", months: [2, 3], note: "混み合う枝を透かす" },
-      { label: "肥料", months: [3, 6, 10], note: "" },
+      { label: "肥料", months: [3, 6, 10], note: "", freq: "年3回(3月・6月・10月)" },
       { label: "収穫", months: [10, 11], note: "" },
     ],
   },
@@ -127,7 +127,7 @@ App.PLANTPEDIA = [
     tasks: [
       { label: "植え付け", months: [4, 5], note: "遅霜の心配がなくなってから" },
       { label: "摘心", months: [5, 6, 7, 8], note: "わき芽かきをこまめに" },
-      { label: "肥料", months: [6, 7, 8], note: "実がつき始めたら追肥" },
+      { label: "肥料", months: [6, 7, 8], note: "実がつき始めたら追肥", freq: "2週間に1回" },
       { label: "収穫", months: [7, 8, 9], note: "" },
     ],
   },
@@ -137,7 +137,7 @@ App.PLANTPEDIA = [
     tips: "肥料と水をよく食べる野菜。7月末に切り戻す(更新剪定)と秋なすが楽しめる。",
     tasks: [
       { label: "植え付け", months: [4, 5], note: "" },
-      { label: "肥料", months: [6, 7, 8, 9], note: "2週に1回ペースで追肥" },
+      { label: "肥料", months: [6, 7, 8, 9], note: "", freq: "2週間に1回" },
       { label: "剪定", months: [7, 8], note: "更新剪定で秋なすへ" },
       { label: "収穫", months: [6, 7, 8, 9, 10], note: "" },
     ],
@@ -150,7 +150,7 @@ App.PLANTPEDIA = [
       { label: "種まき", months: [4], note: "発芽には25℃前後が必要" },
       { label: "植え付け", months: [5], note: "" },
       { label: "摘心", months: [6], note: "本葉5〜6枚で親づるの先を摘む" },
-      { label: "肥料", months: [6, 7, 8, 9], note: "" },
+      { label: "肥料", months: [6, 7, 8, 9], note: "", freq: "2週間に1回" },
       { label: "収穫", months: [7, 8, 9], note: "採り遅れると黄色くなる" },
     ],
   },
@@ -160,7 +160,7 @@ App.PLANTPEDIA = [
     tips: "成長がとても速く、収穫は毎日チェック。下の方のわき芽・雌花は早めに取ると株が育つ。",
     tasks: [
       { label: "植え付け", months: [4, 5], note: "" },
-      { label: "肥料", months: [6, 7, 8], note: "" },
+      { label: "肥料", months: [6, 7, 8], note: "", freq: "10日に1回程度" },
       { label: "収穫", months: [6, 7, 8, 9], note: "20cm前後で早めに" },
     ],
   },
@@ -170,7 +170,7 @@ App.PLANTPEDIA = [
     tips: "初心者向きの果菜。最初の実(一番果)は小さいうちに採ると株が疲れない。",
     tasks: [
       { label: "植え付け", months: [4, 5], note: "" },
-      { label: "肥料", months: [6, 7, 8, 9], note: "" },
+      { label: "肥料", months: [6, 7, 8, 9], note: "", freq: "2週間に1回" },
       { label: "収穫", months: [6, 7, 8, 9, 10], note: "" },
     ],
   },
@@ -180,7 +180,7 @@ App.PLANTPEDIA = [
     tips: "暑さに強く夏向き。実は採り遅れるとすぐ固くなるので5〜10cmで収穫。",
     tasks: [
       { label: "種まき", months: [5], note: "地温が上がってから" },
-      { label: "肥料", months: [6, 7, 8], note: "" },
+      { label: "肥料", months: [6, 7, 8], note: "", freq: "3週間に1回程度" },
       { label: "収穫", months: [7, 8, 9], note: "採り遅れ注意" },
     ],
   },
@@ -273,7 +273,7 @@ App.PLANTPEDIA = [
     tasks: [
       { label: "植え替え", months: [3, 4], note: "鉢植えは2年に1回" },
       { label: "剪定", months: [2, 3], note: "混み合う枝を整理" },
-      { label: "肥料", months: [3, 6, 10], note: "" },
+      { label: "肥料", months: [3, 6, 10], note: "", freq: "年3回(3月・6月・10月)" },
       { label: "摘果", months: [7, 8], note: "実を減らして充実させる" },
       { label: "収穫", months: [1, 2, 3, 10, 11, 12], note: "緑のうちからでも使える" },
     ],
@@ -285,7 +285,7 @@ App.PLANTPEDIA = [
     tasks: [
       { label: "植え付け", months: [1, 2, 3, 11, 12], note: "落葉期に" },
       { label: "剪定", months: [1, 2], note: "古い枝を整理" },
-      { label: "肥料", months: [3, 5, 8], note: "" },
+      { label: "肥料", months: [3, 5, 8], note: "", freq: "年3回(3月・5月・8月)" },
       { label: "収穫", months: [6, 7, 8], note: "色づいて2〜3日後が甘い" },
     ],
   },
@@ -296,7 +296,7 @@ App.PLANTPEDIA = [
     tasks: [
       { label: "植え付け", months: [3, 4], note: "" },
       { label: "剪定", months: [2, 3], note: "" },
-      { label: "肥料", months: [3, 6, 10], note: "" },
+      { label: "肥料", months: [3, 6, 10], note: "", freq: "年3回(3月・6月・10月)" },
       { label: "摘果", months: [7, 8], note: "葉25枚に実1個が目安" },
       { label: "収穫", months: [10, 11, 12], note: "" },
     ],
@@ -308,7 +308,7 @@ App.PLANTPEDIA = [
     tips: "秋に植えて春に収穫。実がついたら敷きわらで泥はね防止。ランナーで株を増やせる。",
     tasks: [
       { label: "植え付け", months: [10, 11], note: "" },
-      { label: "肥料", months: [2, 3], note: "春の追肥" },
+      { label: "肥料", months: [2, 3], note: "春の追肥", freq: "月1回程度(2〜3月)" },
       { label: "収穫", months: [4, 5, 6], note: "" },
       { label: "その他", months: [6, 7], note: "ランナー整理・株の更新" },
     ],
@@ -321,7 +321,7 @@ App.PLANTPEDIA = [
     tips: "日当たりが命。種まきから2ヶ月ほどで開花。子どもの自由研究にもぴったり。",
     tasks: [
       { label: "種まき", months: [4, 5, 6], note: "ずらしまきで開花期を長く" },
-      { label: "肥料", months: [6, 7], note: "" },
+      { label: "肥料", months: [6, 7], note: "", freq: "2週間に1回程度" },
       { label: "開花", months: [7, 8, 9], note: "" },
     ],
   },
