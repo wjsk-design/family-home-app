@@ -390,16 +390,23 @@ App.screens = App.screens || {};
       }
       container.appendChild(grid);
 
-      // ---- 選択日の予定(常時表示。Yahoo!カレンダーのように上下を同時に見せる) ----
+      // ---- 選択日の予定(常時表示。Yahoo!カレンダーのように上下を同時に見せる)。
+      // 予定の追加は、月によって縦に長くなるこの画面ではFAB(固定表示)だと
+      // LINEアプリ内ブラウザでスクロール量により位置がずれる不具合があったため、
+      // 見出し右側の通常のボタン(常に画面内に流れて表示される)に変更(v0.13.11) ----
       const selectedHoliday = App.holidayName(view.selected);
       const daySection = App.el("section", { class: "section cal-day-section" }, [
-        App.sectionHeader(`${App.fmtDate(view.selected)}${selectedHoliday ? "・" + selectedHoliday : ""}の予定`, { icon: "calendar" }),
+        App.sectionHeader(`${App.fmtDate(view.selected)}${selectedHoliday ? "・" + selectedHoliday : ""}の予定`, {
+          icon: "calendar",
+          actionLabel: "予定を追加",
+          onAction: () => openEventSheet(null),
+        }),
       ]);
       const selectedEvents = App.data.eventsOn(view.selected);
       const dayCard = App.el("div", { class: "card card--lg cal-day-card" });
       if (selectedEvents.length === 0) {
         dayCard.appendChild(
-          App.emptyState("sun", "この日の予定はありません", "右下の+から追加できます。")
+          App.emptyState("sun", "この日の予定はありません", "上の「予定を追加」から追加できます。")
         );
       } else {
         selectedEvents.forEach((ev) => {
@@ -430,8 +437,6 @@ App.screens = App.screens || {};
       }
       daySection.appendChild(dayCard);
       container.appendChild(daySection);
-
-      container.appendChild(App.fab("予定を追加", () => openEventSheet(null)));
     },
   };
 })();
