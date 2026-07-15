@@ -253,6 +253,22 @@ function plantCareItemsJST(plants, todayStr) {
   return items;
 }
 
+// 予定の「誰の予定か」。家族全員が対象(=「みんな」)ならnull(付けない)、
+// 一部のメンバーだけが対象なら名前を「・」区切りで返す
+function whoSuffix(e, family) {
+  var ids = e.memberIds || [];
+  if (!family || !family.length) return null;
+  var allIncluded = family.every(function (m) { return ids.indexOf(m.id) >= 0; });
+  if (allIncluded) return null;
+  var names = ids
+    .map(function (id) {
+      var m = family.filter(function (f) { return f.id === id; })[0];
+      return m ? m.name : null;
+    })
+    .filter(Boolean);
+  return names.length ? names.join('・') : null;
+}
+
 // 世帯1件分のデータから、今日のダイジェスト文面を組み立てる(何も無ければnull)
 function buildDigestText(data, todayStr, tomorrowStr) {
   var lines = { task: [], event: [], plant: [], match: [] };
@@ -271,7 +287,8 @@ function buildDigestText(data, todayStr, tomorrowStr) {
     .forEach(function (e) {
       var isMatch = e.kind === 'match';
       var title = e.title.replace(/^⚽\s*/, '');
-      var meta = '今日 ' + (e.time || '終日');
+      var who = whoSuffix(e, data.family);
+      var meta = '今日 ' + (e.time || '終日') + (who ? '・' + who : '');
       (isMatch ? lines.match : lines.event).push(title + '(' + meta + ')');
     });
 
@@ -283,7 +300,8 @@ function buildDigestText(data, todayStr, tomorrowStr) {
     .filter(function (e) { return e.kind === 'match' && e.date === tomorrowStr; })
     .forEach(function (e) {
       var title = e.title.replace(/^⚽\s*/, '');
-      lines.match.push(title + '(明日 ' + (e.time || '') + ')');
+      var who = whoSuffix(e, data.family);
+      lines.match.push(title + '(明日 ' + (e.time || '') + (who ? '・' + who : '') + ')');
     });
 
   var sections = [];
