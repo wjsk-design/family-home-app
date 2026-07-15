@@ -1,18 +1,17 @@
 // ============================================
-// 家族のようす — 本人が自分で更新するステータス
-// (位置情報の自動追跡は行わない)
+// 家族のようす — 今日の予定(カレンダーのmemberIds)から自動表示
+// (位置情報の自動追跡は行わない。以前の「本人が手動で申告するステータス」は
+// こまめな更新が現実的でなく使われないため、v0.20.0で自動導出方式に置き換えた)
 // ============================================
 window.App = window.App || {};
 App.screens = App.screens || {};
 
 (function () {
-  function timeAgo(ts) {
-    const min = Math.floor((Date.now() - ts) / 60000);
-    if (min < 1) return "たった今";
-    if (min < 60) return `${min}分前`;
-    const h = Math.floor(min / 60);
-    if (h < 24) return `${h}時間前`;
-    return `${Math.floor(h / 24)}日前`;
+  function todaySummaryText(memberId) {
+    const s = App.data.memberTodaySummary(memberId);
+    if (!s) return "今日の予定はありません";
+    const extra = s.moreCount > 0 ? ` ほか${s.moreCount}件` : "";
+    return `今日 ${s.time} ${s.title}${extra}`;
   }
 
   // アイコンは名前の頭文字から自動で決まるため、絵文字ピッカーは廃止(v0.5.1)
@@ -79,7 +78,7 @@ App.screens = App.screens || {};
           const m = st.family.find((f) => f.id === member.id);
           if (m) Object.assign(m, { name, color });
         } else {
-          st.family.push({ id: App.uid(), name, color, status: "在宅", updatedAt: Date.now() });
+          st.family.push({ id: App.uid(), name, color });
         }
       });
       App.toast(isEdit ? "変更しました" : `「${name}」を追加しました`);
@@ -95,7 +94,7 @@ App.screens = App.screens || {};
         App.el("p", {
           class: "section",
           style: "font-size: var(--text-sub); color: var(--color-text-secondary);",
-          text: "ようすは家族それぞれが自分で更新します。位置情報の自動追跡はしません。",
+          text: "今日の予定(カレンダー)から自動で表示します。位置情報の自動追跡や手動でのステータス更新はありません。",
         })
       );
 
@@ -105,15 +104,8 @@ App.screens = App.screens || {};
           App.initialAvatar(m.name, m.id),
           App.el("div", { style: "flex: 1; min-width: 0;" }, [
             App.el("p", { style: "font-weight: 600;", text: m.name }),
-            App.el("p", { style: "font-size: var(--text-caption); color: var(--color-text-muted);", text: `更新:${timeAgo(m.updatedAt)}` }),
+            App.el("p", { style: "font-size: var(--text-caption); color: var(--color-text-muted);", text: todaySummaryText(m.id) }),
           ]),
-          App.el("button", {
-            class: "badge",
-            style: "min-height: var(--tap-target); padding: 0 var(--spacing-4); font-size: var(--text-sub);",
-            text: m.status,
-            "aria-label": `${m.name}のようす(${m.status})を変更`,
-            onclick: () => App.openStatusSheet(m),
-          }),
           App.el("button", {
             class: "icon-btn",
             "aria-label": `${m.name}の情報を編集`,

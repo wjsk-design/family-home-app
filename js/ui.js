@@ -441,31 +441,4 @@ window.App = window.App || {};
     });
   };
 
-  // ---- 家族ステータス選択シート(共通) ----
-  App.STATUS_OPTIONS = ["在宅", "外出中", "仕事中", "保育園", "学校", "おでかけ", "お昼寝中", "就寝中"];
-  App.openStatusSheet = function (member) {
-    let selected = member.status;
-    const s = App.sheet(`${member.name}のようす`, [
-      App.el("p", {
-        text: "いまの状態を選んでください(本人が自分で更新する想定です)",
-        style: "font-size: var(--text-sub); color: var(--color-text-secondary); margin-bottom: var(--spacing-4);",
-      }),
-      App.chipSelect(App.STATUS_OPTIONS, selected, (v) => (selected = v)),
-      App.el("button", {
-        class: "btn-primary",
-        text: "更新する",
-        onclick: () => {
-          s.close();
-          App.store.update((st) => {
-            const m = st.family.find((f) => f.id === member.id);
-            if (m) {
-              m.status = selected;
-              m.updatedAt = Date.now();
-            }
-          });
-          App.toast(`${member.name}のようすを「${selected}」にしました`);
-        },
-      }),
-    ]);
-  };
 })();

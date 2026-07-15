@@ -29,10 +29,10 @@ window.App = window.App || {};
       isMockData: true,
       settings: { userName: "パパ", notifications: true, favoriteTeam: "" },
       family: [
-        { id: "f1", name: "パパ", status: "在宅", updatedAt: Date.now() },
-        { id: "f2", name: "ママ", status: "外出中", updatedAt: Date.now() },
-        { id: "f3", name: "はると", status: "保育園", updatedAt: Date.now() },
-        { id: "f4", name: "めい", status: "お昼寝中", updatedAt: Date.now() },
+        { id: "f1", name: "パパ" },
+        { id: "f2", name: "ママ" },
+        { id: "f3", name: "はると" },
+        { id: "f4", name: "めい" },
       ],
       events: [
         { id: App.uid(), date: today(), time: "10:00", title: "めい 予防接種(ひまわり小児科)", memberIds: ["f2", "f4"] },
@@ -176,6 +176,19 @@ window.App = window.App || {};
       return store.state.events
         .filter((e) => this.eventCoversDate(e, dateStr))
         .sort((a, b) => (a.time || "").localeCompare(b.time || ""));
+    },
+    // 家族のようす(旧:本人が手動で申告するステータス)は、こまめな手動更新が
+    // 現実的でないため廃止し、今日の予定(既存のmemberIds)から自動で導出する方式にした。
+    // 予定が無ければnull(「予定なし」として表示側で扱う)
+    memberTodaySummary(memberId) {
+      const evs = this.todayEvents().filter((e) => (e.memberIds || []).includes(memberId));
+      if (!evs.length) return null;
+      const first = evs[0]; // todayEventsは既に時刻順
+      return {
+        title: first.title.replace(/^⚽\s*/, ""),
+        time: first.time || "終日",
+        moreCount: evs.length - 1,
+      };
     },
     todayTasks() {
       // 今日が期限 or 期限切れの未完了を優先し、完了済みは後ろへ

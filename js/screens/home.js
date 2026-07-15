@@ -126,11 +126,13 @@ App.screens.home = {
     ]);
     const row = App.el("div", { class: "family-row" });
     st.family.forEach((m) => {
+      const summary = App.data.memberTodaySummary(m.id);
+      const label = summary ? `${summary.time} ${summary.title}` : "予定なし";
       row.appendChild(
-        App.el("button", { class: "family-card", "aria-label": `${m.name}(${m.status})のようすを更新`, onclick: () => App.openStatusSheet(m) }, [
+        App.el("button", { class: "family-card", "aria-label": `${m.name}の今日の予定(${label})`, onclick: () => App.go("family") }, [
           App.initialAvatar(m.name, m.id),
           App.el("span", { class: "family-card__name", text: m.name }),
-          App.el("span", { class: "badge badge--muted", text: m.status }),
+          App.el("span", { class: "badge badge--muted", text: label }),
         ])
       );
     });

@@ -109,6 +109,13 @@
 }
 .family-card:active { transform: scale(0.96); }
 .family-card__name { font-size: var(--text-sub); font-weight: 600; }
+/* 今日の予定の文言は長さが読めないため、カード内で折り返して収める(旧ステータスは短い固定語だったため不要だった) */
+.family-card .badge {
+  white-space: normal;
+  text-align: center;
+  max-width: 100%;
+  line-height: 1.3;
+}
 
 /* ---- ホーム:クイックアクセス ---- */
 .quick-grid {
