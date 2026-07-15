@@ -237,10 +237,12 @@ window.App = window.App || {};
     },
 
     // 図鑑由来の「今月のお世話ヒント」— うちの植物と図鑑を名前でゆるく突き合わせ、
-    // 今月が適期の作業を参考情報として返す(自分でお手入れ予定を登録済みの内容は重複させない)。
+    // 今月が適期の作業を参考情報として返す(自分でお手入れ予定を登録済みの内容、
+    // 今月すでに「やった」記録がある内容は重複させない)。
     // plantCareItemsと違いdoneの概念がない(月単位の目安のため)ので、チェック項目には混ぜない。
     plantPediaTips() {
       const cur = new Date().getMonth() + 1;
+      const curMonthPrefix = today().slice(0, 7);
       const items = [];
       store.state.plants.forEach((p) => {
         if (!p.name) return;
@@ -249,18 +251,33 @@ window.App = window.App || {};
         );
         if (!pedia) return;
         const ownLabels = (p.careTasks || []).map((c) => c.label);
+        const loggedThisMonth = (p.careLog || [])
+          .filter((c) => (c.doneAt || "").startsWith(curMonthPrefix))
+          .map((c) => c.label);
         (pedia.tasks || []).forEach((t) => {
           if (t.months.indexOf(cur) < 0) return;
           if (ownLabels.includes(t.label)) return;
+          if (loggedThisMonth.includes(t.label)) return;
           items.push({
             id: `plant-pedia-${p.id}-${pedia.id}-${t.label}`,
             plantId: p.id,
+            label: t.label,
             title: `「${p.name}」の${t.label}`,
             meta: t.freq ? `図鑑のおすすめ・頻度:${t.freq}` : "図鑑のおすすめ(今月が適期)",
           });
         });
       });
       return items;
+    },
+
+    // 図鑑ヒントを「やった」記録として残す(careLogに追加するだけ。予定の作成はしない)
+    logPediaTip(plantId, label) {
+      store.update((st) => {
+        const p = st.plants.find((x) => x.id === plantId);
+        if (!p) return;
+        if (!p.careLog) p.careLog = [];
+        p.careLog.push({ label, doneAt: today() });
+      });
     },
 
     // お知らせ(アプリ内通知)— 今日/期限まわりの「気づいてほしい」項目を集約する。

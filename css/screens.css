@@ -332,7 +332,7 @@
 }
 .plant-card .btn-secondary { min-height: var(--tap-target); }
 
-/* ---- 植物:図鑑ヒント(参考情報。チェックはできない) ---- */
+/* ---- 植物:図鑑ヒント(参考情報。「やった」で履歴に記録できる) ---- */
 .plant-pedia-tip {
   margin-top: var(--spacing-3);
   background: var(--cat-plant-bg);
@@ -343,9 +343,45 @@
   font-size: var(--text-caption);
   font-weight: 600;
   color: var(--cat-plant);
+  margin-bottom: 4px;
+}
+.plant-pedia-tip__row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  padding: 4px 0;
+}
+.plant-pedia-tip__row + .plant-pedia-tip__row { border-top: 1px solid rgba(0, 0, 0, 0.06); }
+.plant-pedia-tip__item {
+  flex: 1;
+  font-size: var(--text-caption);
+  color: var(--color-text-muted);
+}
+.plant-pedia-tip__done {
+  flex-shrink: 0;
+  font-size: var(--text-caption);
+  font-weight: 600;
+  color: var(--cat-plant);
+  background: var(--color-surface);
+  border-radius: var(--radius-full);
+  padding: 4px var(--spacing-3);
+  min-height: 28px;
+}
+.plant-pedia-tip__done:active { background: var(--cat-plant-bg); }
+
+/* ---- 植物:最近のお世話履歴 ---- */
+.plant-care-history {
+  margin-top: var(--spacing-3);
+  padding-top: var(--spacing-2);
+  border-top: 1px solid var(--color-divider);
+}
+.plant-care-history__label {
+  font-size: var(--text-caption);
+  font-weight: 600;
+  color: var(--color-text-muted);
   margin-bottom: 2px;
 }
-.plant-pedia-tip__item {
+.plant-care-history__items {
   font-size: var(--text-caption);
   color: var(--color-text-muted);
 }

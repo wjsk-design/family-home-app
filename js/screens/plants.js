@@ -290,12 +290,37 @@ App.screens = App.screens || {};
           })
         );
 
-        // 図鑑由来の今月のお世話ヒント(参考情報。チェックはできない)
+        // 図鑑由来の今月のお世話ヒント(参考情報。「やった」を押すと履歴に記録され、今月は消える)
         const myTips = pediaTips.filter((t) => t.plantId === p.id);
         const tipBox = myTips.length
           ? App.el("div", { class: "plant-pedia-tip" }, [
               App.el("p", { class: "plant-pedia-tip__label", text: `今月のヒント(${new Date().getMonth() + 1}月)` }),
-              ...myTips.map((t) => App.el("p", { class: "plant-pedia-tip__item", text: `${t.title.replace(`「${p.name}」の`, "")}・${t.meta}` })),
+              ...myTips.map((t) =>
+                App.el("div", { class: "plant-pedia-tip__row" }, [
+                  App.el("p", { class: "plant-pedia-tip__item", text: `${t.label}・${t.meta}` }),
+                  App.el("button", {
+                    class: "plant-pedia-tip__done",
+                    "aria-label": `「${t.label}」をやった記録として残す`,
+                    text: "やった",
+                    onclick: () => {
+                      App.data.logPediaTip(p.id, t.label);
+                      App.toast(`「${p.name}」の${t.label}を記録しました`, "checkCircle");
+                    },
+                  }),
+                ])
+              ),
+            ])
+          : null;
+
+        // 最近のお世話履歴(直近4件。水やりは頻度が高いので別扱い・ここには含めない)
+        const recentLog = [...(p.careLog || [])].sort((a, b) => (b.doneAt || "").localeCompare(a.doneAt || "")).slice(0, 4);
+        const historyBox = recentLog.length
+          ? App.el("div", { class: "plant-care-history" }, [
+              App.el("p", { class: "plant-care-history__label", text: "最近のお世話" }),
+              App.el("p", {
+                class: "plant-care-history__items",
+                text: recentLog.map((c) => `${fmtShort(c.doneAt)} ${c.label}`).join("・"),
+              }),
             ])
           : null;
 
@@ -321,6 +346,7 @@ App.screens = App.screens || {};
             waterBtn,
             tipBox,
             careList,
+            historyBox,
           ])
         );
       });
