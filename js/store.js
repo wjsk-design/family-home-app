@@ -236,6 +236,33 @@ window.App = window.App || {};
       return items;
     },
 
+    // 図鑑由来の「今月のお世話ヒント」— うちの植物と図鑑を名前でゆるく突き合わせ、
+    // 今月が適期の作業を参考情報として返す(自分でお手入れ予定を登録済みの内容は重複させない)。
+    // plantCareItemsと違いdoneの概念がない(月単位の目安のため)ので、チェック項目には混ぜない。
+    plantPediaTips() {
+      const cur = new Date().getMonth() + 1;
+      const items = [];
+      store.state.plants.forEach((p) => {
+        if (!p.name) return;
+        const pedia = (App.PLANTPEDIA || []).find(
+          (e) => p.name.includes(e.name) || e.name.includes(p.name)
+        );
+        if (!pedia) return;
+        const ownLabels = (p.careTasks || []).map((c) => c.label);
+        (pedia.tasks || []).forEach((t) => {
+          if (t.months.indexOf(cur) < 0) return;
+          if (ownLabels.includes(t.label)) return;
+          items.push({
+            id: `plant-pedia-${p.id}-${pedia.id}-${t.label}`,
+            plantId: p.id,
+            title: `「${p.name}」の${t.label}`,
+            meta: t.freq ? `図鑑のおすすめ・頻度:${t.freq}` : "図鑑のおすすめ(今月が適期)",
+          });
+        });
+      });
+      return items;
+    },
+
     // お知らせ(アプリ内通知)— 今日/期限まわりの「気づいてほしい」項目を集約する。
     // settings.notifPrefs で種類ごとにオン・オフ(未設定なら全部オン)。
     // 実データから毎回導出するので、完了・水やり等で対応すると自然に消える。
@@ -280,6 +307,14 @@ window.App = window.App || {};
           list.push({
             id: p.id,
             cat: "plant", icon: p.kind === "water" ? "drop" : "leaf",
+            title: p.title, meta: p.meta, route: "plants",
+          })
+        );
+        // 図鑑由来の今月のお世話ヒント(参考情報)
+        this.plantPediaTips().forEach((p) =>
+          list.push({
+            id: p.id,
+            cat: "plant", icon: "leaf",
             title: p.title, meta: p.meta, route: "plants",
           })
         );

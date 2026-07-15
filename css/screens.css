@@ -332,6 +332,24 @@
 }
 .plant-card .btn-secondary { min-height: var(--tap-target); }
 
+/* ---- 植物:図鑑ヒント(参考情報。チェックはできない) ---- */
+.plant-pedia-tip {
+  margin-top: var(--spacing-3);
+  background: var(--cat-plant-bg);
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-2) var(--spacing-3);
+}
+.plant-pedia-tip__label {
+  font-size: var(--text-caption);
+  font-weight: 600;
+  color: var(--cat-plant);
+  margin-bottom: 2px;
+}
+.plant-pedia-tip__item {
+  font-size: var(--text-caption);
+  color: var(--color-text-muted);
+}
+
 /* ---- 植物:お手入れ予定 ---- */
 .care-list {
   margin-top: var(--spacing-4);

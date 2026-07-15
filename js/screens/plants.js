@@ -214,6 +214,7 @@ App.screens = App.screens || {};
 
     render(container) {
       const plants = App.store.state.plants;
+      const pediaTips = App.data.plantPediaTips();
 
       // 図鑑への導線(何月に何をすべきかはこちらで確認できる)
       container.appendChild(
@@ -289,6 +290,15 @@ App.screens = App.screens || {};
           })
         );
 
+        // 図鑑由来の今月のお世話ヒント(参考情報。チェックはできない)
+        const myTips = pediaTips.filter((t) => t.plantId === p.id);
+        const tipBox = myTips.length
+          ? App.el("div", { class: "plant-pedia-tip" }, [
+              App.el("p", { class: "plant-pedia-tip__label", text: `今月のヒント(${new Date().getMonth() + 1}月)` }),
+              ...myTips.map((t) => App.el("p", { class: "plant-pedia-tip__item", text: `${t.title.replace(`「${p.name}」の`, "")}・${t.meta}` })),
+            ])
+          : null;
+
         section.appendChild(
           App.el("div", { class: "card card--lg plant-card" }, [
             App.el("div", { class: "plant-card__head" }, [
@@ -309,6 +319,7 @@ App.screens = App.screens || {};
               App.el("div", { class: "plant-meter__bar", style: `width: ${Math.round(elapsedRatio * 100)}%;${due ? " background: var(--color-warning);" : ""}` }),
             ]),
             waterBtn,
+            tipBox,
             careList,
           ])
         );
