@@ -25,11 +25,13 @@ window.App = window.App || {};
     inLiff() { return !!App.liffState && App.liffState.mode === "liff"; },
     enabled() { return this.configured() && this.inLiff() && this.hasHousehold(); },
 
+    // IDトークンは寿命が短いため、呼ぶたびにLIFF SDKから毎回取り直す
+    // (以前は起動時に1回だけ取得してキャッシュしていたため、テストを重ねる
+    // うちに期限切れになり「IdToken expired」で失敗する不具合があった)
     idToken() {
-      if (App.liffState && App.liffState.idToken) return App.liffState.idToken;
       if (window.liff && typeof window.liff.getIDToken === "function") {
         const t = window.liff.getIDToken();
-        if (t) { App.liffState.idToken = t; return t; }
+        if (t) return t;
       }
       throw new Error("LINEログインが必要です");
     },
