@@ -156,12 +156,40 @@ App.screens = App.screens || {};
   }
 
   // ---- 植物の写真登録(Google Driveに保存し、URLだけをplant.photosに持つ) ----
+  // 写真に「摘芯」等のコメントを付けると、同時にお世話履歴(careLog)にも記録する
+  // (写真を撮る→アップロードする、お世話をした→履歴に残す、を別々の操作にせず1つの流れにする)
+  const PHOTO_LABELS = ["コメントなし", "摘芯", "植え替え", "肥料", "剪定", "その他"];
+
   function photosOf(p) {
     if (!p.photos) p.photos = [];
     return p.photos;
   }
 
-  async function addPhoto(plant, file) {
+  function openPhotoConfirmSheet(plant, file) {
+    const previewUrl = URL.createObjectURL(file);
+    const labelInput = App.el("input", { type: "text", value: "", placeholder: "コメント(任意。例:摘芯しました)" });
+    const chips = App.chipSelect(PHOTO_LABELS, "コメントなし", (v) => {
+      if (v === "コメントなし") labelInput.value = "";
+      else if (v === "その他") { labelInput.value = ""; labelInput.focus(); }
+      else labelInput.value = v;
+    });
+    const saveBtn = App.el("button", { class: "btn-primary", html: App.icon("plus", 18) + "<span>写真を追加</span>" });
+    const s = App.sheet("写真を追加", [
+      App.el("img", { src: previewUrl, alt: "選んだ写真のプレビュー", class: "photo-viewer__img" }),
+      App.el("div", { class: "field" }, [
+        App.el("span", { class: "field__label", text: "お世話の記録(任意。付けると履歴にも残ります)" }),
+        chips,
+      ]),
+      App.field("コメント", labelInput),
+      saveBtn,
+    ]);
+    saveBtn.addEventListener("click", () => {
+      s.close();
+      uploadPhotoWithLabel(plant, file, labelInput.value.trim());
+    });
+  }
+
+  async function uploadPhotoWithLabel(plant, file, label) {
     uploadingIds.add(plant.id);
     App.refresh();
     try {
@@ -169,9 +197,14 @@ App.screens = App.screens || {};
       const { id, url } = await App.sync.uploadPlantPhoto(plant.id, base64, "image/jpeg", plant.id);
       App.store.update((st) => {
         const p = st.plants.find((x) => x.id === plant.id);
-        if (p) photosOf(p).push({ id, url, addedAt: App.date.today() });
+        if (!p) return;
+        photosOf(p).push({ id, url, addedAt: App.date.today(), label: label || "" });
+        if (label) {
+          if (!p.careLog) p.careLog = [];
+          p.careLog.push({ label, doneAt: App.date.today() });
+        }
       });
-      App.toast("写真を追加しました", "sparkle");
+      App.toast(label ? `「${label}」を記録し、写真を追加しました` : "写真を追加しました", "sparkle");
     } catch (e) {
       App.toast("写真をアップロードできませんでした。通信状況を確認してください。", "info");
     } finally {
@@ -184,6 +217,7 @@ App.screens = App.screens || {};
     const delBtn = App.el("button", { class: "btn-danger-text", html: App.icon("trash", 16) + "<span>この写真を削除</span>" });
     const s = App.sheet(plant.name, [
       App.el("img", { src: photo.url, alt: `${plant.name}の写真`, class: "photo-viewer__img" }),
+      photo.label ? App.el("span", { class: "badge badge--success", style: "margin-bottom: var(--spacing-2);", text: photo.label }) : null,
       App.el("p", { class: "photo-viewer__date", text: `${App.fmtDate(photo.addedAt, { weekday: false })}に追加` }),
       delBtn,
     ]);
@@ -391,7 +425,7 @@ App.screens = App.screens || {};
         const photoInput = App.el("input", { type: "file", accept: "image/*", style: "display: none;" });
         photoInput.addEventListener("change", () => {
           const file = photoInput.files && photoInput.files[0];
-          if (file) addPhoto(p, file);
+          if (file) openPhotoConfirmSheet(p, file);
           photoInput.value = "";
         });
         const uploading = uploadingIds.has(p.id);
