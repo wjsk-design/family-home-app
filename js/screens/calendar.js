@@ -147,6 +147,8 @@ App.screens = App.screens || {};
 
   // ホームの予定詳細シートからも編集できるように公開する(App.openTaskSheetと同じパターン)
   App.openEventSheet = openEventSheet;
+  // 「毎年」くり返しの日付生成をcontacts.js(お友達の誕生日登録)からも使えるように公開する
+  App.recurDates = recurDates;
 
   function openEventSheet(ev) {
     const isEdit = !!ev;

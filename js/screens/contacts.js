@@ -49,6 +49,55 @@ App.screens = App.screens || {};
     return null;
   }
 
+  // ---- 誕生日のカレンダー登録(任意)。calendar.jsの「毎年」くり返し予定を流用する ----
+  // 過去の生年月日そのものを起点にすると、くり返しが過去年ぶんまで大量生成されてしまうため、
+  // 直近の誕生日(今年まだなら今年、過ぎていれば来年)を起点日にする
+  function nextBirthdayDate(birthday) {
+    const b = new Date(birthday + "T00:00:00");
+    const now = new Date();
+    let occ = new Date(now.getFullYear(), b.getMonth(), b.getDate());
+    if (App.date.str(occ) < App.date.today()) occ = new Date(now.getFullYear() + 1, b.getMonth(), b.getDate());
+    return App.date.str(occ);
+  }
+
+  function buildBirthdayMemo(c) {
+    const related = c.relatedMemberId ? App.data.member(c.relatedMemberId) : null;
+    const lines = [];
+    if (c.context) lines.push(`関係: ${c.context}`);
+    if (related) lines.push(`どの子の関係: ${related.name}`);
+    const grade = relativeGradeText(c);
+    if (grade) lines.push(`学年: ${grade}`);
+    if (c.birthday) {
+      const d = new Date(c.birthday + "T00:00:00");
+      lines.push(`生年月日: ${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`);
+    }
+    if (c.note) lines.push(`メモ: ${c.note}`);
+    return lines.join("\n");
+  }
+
+  function offerAddBirthdayToCalendar(c) {
+    App.confirm({
+      title: "カレンダーにも追加しますか?",
+      message: `「${c.name}の誕生日」を毎年くり返しの予定としてカレンダーに追加できます。`,
+      okLabel: "追加する",
+      onOk: () => {
+        const start = nextBirthdayDate(c.birthday);
+        const untilDate = new Date(start + "T00:00:00");
+        untilDate.setFullYear(untilDate.getFullYear() + 50);
+        const until = App.date.str(untilDate);
+        const seriesId = `series-${App.uid()}`;
+        const title = `${c.name}の誕生日`;
+        const memo = buildBirthdayMemo(c);
+        App.store.update((st) => {
+          App.recurDates(start, "yearly", until).forEach((d) => {
+            st.events.push({ id: App.uid(), title, date: d, memo, seriesId });
+          });
+        });
+        App.toast("カレンダーに追加しました", "calendar");
+      },
+    });
+  }
+
   // ---- 追加・編集シート ----
   function openContactSheet(contact) {
     const isEdit = !!contact;
@@ -160,21 +209,20 @@ App.screens = App.screens || {};
       const note = noteInput.value.trim();
       const birthday = birthdayInput.value || undefined;
       const finalGradeOffset = relatedMemberId && gradeOffset !== "" ? Number(gradeOffset) : undefined;
+      const savedFields = { name, context, note, birthday, relatedMemberId: relatedMemberId || undefined, gradeOffset: finalGradeOffset };
+      // 誕生日が新しく登録された/変わった時だけカレンダー追加を案内する(毎回は聞かない)
+      const birthdayChanged = !!birthday && (!isEdit || birthday !== (contact.birthday || ""));
       s.close();
       App.store.update((st) => {
         if (isEdit) {
           const c = contactsOf().find((x) => x.id === contact.id);
-          if (c) Object.assign(c, { name, context, note, birthday, relatedMemberId: relatedMemberId || undefined, gradeOffset: finalGradeOffset });
+          if (c) Object.assign(c, savedFields);
         } else {
-          contactsOf().push({
-            id: App.uid(), name, context, note, birthday,
-            relatedMemberId: relatedMemberId || undefined,
-            gradeOffset: finalGradeOffset,
-            createdAt: Date.now(),
-          });
+          contactsOf().push({ id: App.uid(), ...savedFields, createdAt: Date.now() });
         }
       });
       App.toast(isEdit ? "変更しました" : `「${name}」を追加しました`);
+      if (birthdayChanged) offerAddBirthdayToCalendar(savedFields);
     });
   }
 
