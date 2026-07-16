@@ -26,6 +26,7 @@ function openEventDetailSheet(ev) {
     row("だれの予定", who),
   ];
   if (ev.memo) content.push(row("メモ", ev.memo, true));
+  if (ev.comments && ev.comments.length) content.push(row("コメント", `${ev.comments.length}件あります(編集画面で読める・書ける)`));
 
   const editBtn = App.el("button", { class: "btn-primary", text: "この予定を編集" });
   content.push(editBtn);
@@ -98,10 +99,13 @@ App.screens.home = {
       );
     } else {
       events.forEach((ev) => {
-        // メモ付きの予定には小さなアイコンを添えて「タップで見られる」ことを示す
+        // メモ・コメント付きの予定には小さなアイコンを添えて「タップで見られる」ことを示す
         const title = App.el("span", { class: "schedule-item__title" }, [
           ev.title,
           ev.memo ? App.el("span", { class: "schedule-item__note-icon", html: App.icon("note", 13) }) : null,
+          ev.comments && ev.comments.length
+            ? App.el("span", { class: "schedule-item__note-icon", html: App.icon("send", 13) + `<span>${ev.comments.length}</span>` })
+            : null,
         ]);
         const isAway = ev.kind === "match" && ev.venue === "away";
         const dot = App.el("span", {

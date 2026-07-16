@@ -230,6 +230,60 @@ App.screens = App.screens || {};
       memoLinkBtn,
     ];
 
+    // コメント(TimeTree的な、予定ごとのやり取り。メモが「決まった内容」を書く場所なのに対し、
+    // こちらは「持ち物どうする?」のような時系列のやり取りを積み重ねる場所。新規作成時はまだ
+    // 予定自体が保存されていないので、既存の予定を開いた(isEdit)ときだけ使える)
+    if (isEdit) {
+      let comments = [...(ev.comments || [])];
+      const commentListEl = App.el("div", { style: "margin-top: var(--spacing-2);" });
+      const fmtCommentTime = (ms) => {
+        const d = new Date(ms);
+        return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+      };
+      const renderComments = () => {
+        commentListEl.innerHTML = "";
+        if (comments.length === 0) {
+          commentListEl.appendChild(
+            App.el("p", { style: "font-size: var(--text-caption); color: var(--color-text-muted);", text: "まだコメントはありません。" })
+          );
+          return;
+        }
+        comments.forEach((c) => {
+          commentListEl.appendChild(
+            App.el("div", { style: "padding: var(--spacing-2) 0; border-top: 1px solid var(--color-divider);" }, [
+              App.el("p", { style: "font-size: var(--text-caption); color: var(--color-text-muted);", text: `${c.author || "だれか"}・${fmtCommentTime(c.createdAt)}` }),
+              App.el("p", { style: "font-size: var(--text-sub); white-space: pre-wrap;", text: c.text }),
+            ])
+          );
+        });
+      };
+      const commentInput = App.el("textarea", { style: "min-height: 44px;", placeholder: "コメントを追加(持ち物・連絡事項など)" });
+      const commentSendBtn = App.el("button", {
+        class: "btn-secondary", style: "margin-top: var(--spacing-2);",
+        html: App.icon("send", 16) + "<span>コメントする</span>",
+      });
+      commentSendBtn.addEventListener("click", () => {
+        const text = commentInput.value.trim();
+        if (!text) return;
+        comments.push({ id: App.uid(), text, author: App.store.state.settings.userName || null, createdAt: Date.now() });
+        App.store.update((st) => {
+          const e = st.events.find((x) => x.id === ev.id);
+          if (e) e.comments = comments.slice();
+        });
+        commentInput.value = "";
+        renderComments();
+      });
+      renderComments();
+      content.push(
+        App.el("div", { class: "field" }, [
+          App.el("span", { class: "field__label", text: "コメント" }),
+          commentListEl,
+          commentInput,
+          commentSendBtn,
+        ])
+      );
+    }
+
     // くり返しは新規追加のときだけ選べる(編集は常にその回だけへの変更として扱う)。
     // 複数日にまたがる予定との組み合わせは対象外のため、dayModeChipsでも表示を切り替える
     let recur = "none";
@@ -526,6 +580,9 @@ App.screens = App.screens || {};
           const resultBadge = resultInfo
             ? App.el("span", { class: `badge ${resultInfo.cls}`, text: resultInfo.text })
             : null;
+          const commentBadge = ev.comments && ev.comments.length
+            ? App.el("span", { class: "badge badge--muted", html: App.icon("send", 12) + `<span>${ev.comments.length}</span>` })
+            : null;
           // 複数日にまたがる予定は、時刻の代わりに期間(8/10〜8/18)を表示して
           // 「この日だけの予定ではない」ことが分かるようにする
           const timeLabel = ev.endDate ? `${App.fmtDateShort(ev.date)}〜${App.fmtDateShort(ev.endDate)}` : (ev.time || "終日");
@@ -540,6 +597,7 @@ App.screens = App.screens || {};
               App.el("span", { class: "schedule-item__time", text: timeLabel }),
               titleWrap,
               resultBadge,
+              commentBadge,
               avatars,
             ])
           );
