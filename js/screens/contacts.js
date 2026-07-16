@@ -325,7 +325,9 @@ App.screens = App.screens || {};
       }
 
       const contexts = [...new Set(all.map((c) => c.context || "関係未設定"))].sort();
-      if (contexts.length > 1) {
+      // 関係の種類が1つでもあれば出す(「保育園」しかまだ無くても、後で増えたときのために
+      // ALL/保育園を先に見せておく。実際に絞り込みが要らないのは全員が無関係のときだけ)
+      if (contexts.length > 1 || (contexts.length === 1 && contexts[0] !== "関係未設定")) {
         if (contextFilter && !contexts.includes(contextFilter)) contextFilter = null;
         section.appendChild(
           App.el("div", { style: "margin-top: var(--spacing-3);" }, [
