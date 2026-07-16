@@ -548,7 +548,7 @@ App.screens = App.screens || {};
     };
     const sorted = [...plants].sort((a, b) => rank(a) - rank(b));
 
-    const grid = App.el("div", { class: "plant-grid", style: places.length > 1 ? "margin-top: var(--spacing-3);" : "" });
+    const list = App.el("div", { class: "plant-list", style: places.length > 1 ? "margin-top: var(--spacing-3);" : "" });
     sorted.forEach((p) => {
       const left = App.plantDaysLeft(p);
       const due = left <= 0;
@@ -590,9 +590,9 @@ App.screens = App.screens || {};
         },
       });
 
-      grid.appendChild(App.el("div", { class: "plant-tile" }, [link, waterBtn]));
+      list.appendChild(App.el("div", { class: "plant-tile" }, [link, waterBtn]));
     });
-    section.appendChild(grid);
+    section.appendChild(list);
 
     container.appendChild(section);
     container.appendChild(App.fab("植物を追加", () => openPlantSheet(null)));

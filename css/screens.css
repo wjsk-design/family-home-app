@@ -304,28 +304,27 @@
 }
 .shopping-add button:active { background: var(--color-primary-strong); }
 
-/* ---- 植物:一覧グリッド(写真を主役にした2列カード。状態は名前の下に1つだけ) ---- */
-.plant-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-3); }
-.plant-tile { position: relative; }
+/* ---- 植物:一覧(1行1鉢。写真は大きめの正方形を左に、水やりボタンは行の右端) ---- */
+.plant-list { display: flex; flex-direction: column; gap: var(--spacing-3); }
+.plant-tile { display: flex; align-items: center; gap: var(--spacing-2); }
 .plant-tile__link {
-  display: block; width: 100%; text-align: left; background: var(--color-surface);
-  border-radius: var(--radius-md); overflow: hidden; box-shadow: var(--shadow-card);
+  flex: 1; min-width: 0; display: flex; align-items: stretch; text-align: left;
+  background: var(--color-surface); border-radius: var(--radius-md); overflow: hidden; box-shadow: var(--shadow-card);
 }
 .plant-tile__photo {
-  display: block; height: 148px; background-size: cover; background-position: center;
+  display: block; width: 104px; height: 104px; flex-shrink: 0; background-size: cover; background-position: center;
   background-color: var(--cat-plant-bg);
 }
 .plant-tile__photo--empty {
   display: flex; align-items: center; justify-content: center; color: var(--color-primary);
   background: linear-gradient(150deg, var(--color-primary-light) 0%, var(--color-accent-light) 100%);
 }
-.plant-tile__body { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; padding: var(--spacing-2) var(--spacing-3) var(--spacing-3); }
+.plant-tile__body { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; gap: 3px; padding: var(--spacing-3); }
 .plant-tile__name { font-weight: 600; font-size: var(--text-body); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.plant-tile__place { font-size: var(--text-caption); color: var(--color-text-muted); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 2px; }
-/* 写真の高さ(148px)基準で右下隅に固定。本文の行数で位置がぶれないようtopで指定する */
+.plant-tile__place { font-size: var(--text-caption); color: var(--color-text-muted); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .plant-tile__water {
-  position: absolute; right: 8px; top: 104px; width: 36px; height: 36px; border-radius: var(--radius-full);
-  background: rgba(255,255,255,0.92); box-shadow: var(--shadow-raised); color: var(--color-text-secondary);
+  flex-shrink: 0; width: var(--tap-target); height: var(--tap-target); border-radius: var(--radius-full);
+  background: var(--color-surface); box-shadow: var(--shadow-card); color: var(--color-text-secondary);
   display: flex; align-items: center; justify-content: center;
 }
 .plant-tile__water--due { color: var(--color-on-primary); background: var(--cat-plant); }
