@@ -33,11 +33,19 @@ App.screens.shopping = {
     const input = App.el("input", { type: "text", placeholder: "例:牛乳", "aria-label": "買うもの" });
     const addBtn = App.el("button", { "aria-label": "リストに追加", html: App.icon("plus", 22) });
     const addName = (name) => {
+      const trimmed = name.trim();
+      // 未購入で同じ名前がすでにあれば増やさない(購入済みのものを「また買う」場合は
+      // 別枠なので対象外。LINEインボックス経由の追加も同じ判定基準に揃えている)
+      const dup = App.store.state.shopping.some((s) => !s.done && s.name.trim() === trimmed);
+      if (dup) {
+        App.toast(`「${trimmed}」はすでにリストにあります`, "info");
+        return;
+      }
       App.store.update((st) => {
-        st.shopping.unshift({ id: App.uid(), name, done: false });
+        st.shopping.unshift({ id: App.uid(), name: trimmed, done: false });
       });
-      bumpFrequent(name);
-      App.toast(`「${name}」を追加しました`);
+      bumpFrequent(trimmed);
+      App.toast(`「${trimmed}」を追加しました`);
     };
     const add = () => {
       const name = input.value.trim();

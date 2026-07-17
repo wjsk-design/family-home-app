@@ -84,13 +84,21 @@ App.screens = App.screens || {};
     sheetNode.appendChild(actionBtn("買い物にする", "cart", () => {
       s.close();
       let newId = null;
+      let duplicate = false;
       App.store.update((st) => {
-        newId = App.uid();
-        st.shopping.unshift({ id: newId, name: title, done: false });
-        if (!st.shoppingFrequent) st.shoppingFrequent = [];
-        const entry = st.shoppingFrequent.find((e) => e.name === title);
-        if (entry) entry.count++;
-        else st.shoppingFrequent.push({ name: title, count: 1 });
+        // 未購入で同じ名前がすでにあれば増やさない(手入力・LINE直接登録と同じ判定基準)
+        const existing = st.shopping.find((x) => !x.done && x.name.trim() === title.trim());
+        if (existing) {
+          duplicate = true;
+          newId = existing.id;
+        } else {
+          newId = App.uid();
+          st.shopping.unshift({ id: newId, name: title, done: false });
+          if (!st.shoppingFrequent) st.shoppingFrequent = [];
+          const entry = st.shoppingFrequent.find((e) => e.name === title);
+          if (entry) entry.count++;
+          else st.shoppingFrequent.push({ name: title, count: 1 });
+        }
         const it = (st.inboxItems || []).find((x) => x.id === item.id);
         if (it) {
           it.status = "processed";
@@ -100,7 +108,7 @@ App.screens = App.screens || {};
         }
       });
       if (App.track) App.track("inbox_converted", { to: "shopping", chars: item.text.length });
-      App.toast(`「${title}」を買い物リストに追加しました`, "cart");
+      App.toast(duplicate ? `「${title}」はすでにリストにあります` : `「${title}」を買い物リストに追加しました`, "cart");
     }));
 
     sheetNode.appendChild(actionBtn("メモとして残す", "note", () => {

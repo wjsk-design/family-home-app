@@ -1578,6 +1578,9 @@ function createFromInbox_(data, category, body, original) {
   var title = (parsed.cleaned || body || original || '').trim() || (body || original);
   if (category === 'shopping') {
     if (!data.shopping) data.shopping = [];
+    // 未購入で同じ名前がすでにあれば増やさない(js/screens/shopping.jsの手入力と同じ判定基準)
+    var existing = data.shopping.filter(function (s) { return !s.done && String(s.name).trim() === title.trim(); })[0];
+    if (existing) return { type: 'shopping', id: existing.id, label: title, duplicate: true };
     data.shopping.unshift({ id: id, name: title, done: false });
     return { type: 'shopping', id: id, label: title };
   }
@@ -1656,7 +1659,10 @@ function handleInboxMessage_(ev, userId) {
   if (cls.kind === 'direct') {
     // 即時登録の確認返信は本人の設定(既定オフ=通知を増やさない)がONのときだけ
     if (created && prefs.inboxReply === true && ev.replyToken) {
-      replyViaQuota_(ev, '「' + created.label + '」を' + inboxCategoryLabel_(cls.category) + 'に登録しました', { householdId: householdId, targetType: 'inbox', targetId: itemId });
+      var msgText = created.duplicate
+        ? '「' + created.label + '」はすでに' + inboxCategoryLabel_(cls.category) + 'にあります'
+        : '「' + created.label + '」を' + inboxCategoryLabel_(cls.category) + 'に登録しました';
+      replyViaQuota_(ev, msgText, { householdId: householdId, targetType: 'inbox', targetId: itemId });
     }
   } else if (ev.replyToken) {
     // 曖昧なときは1回だけ候補を返す(多段返信はしない)
@@ -1690,7 +1696,9 @@ function handleInboxPostback_(ev, userId, q) {
     item.targetType = created.type;
     item.targetId = created.id;
     convertedTo = q.as;
-    replyText = '「' + created.label + '」を' + inboxCategoryLabel_(q.as) + 'に登録しました';
+    replyText = created.duplicate
+      ? '「' + created.label + '」はすでに' + inboxCategoryLabel_(q.as) + 'にあります'
+      : '「' + created.label + '」を' + inboxCategoryLabel_(q.as) + 'に登録しました';
     return true;
   });
   if (convertedTo) logProductEventInternal_(householdId, userId, 'inbox_converted', { to: convertedTo, via: 'line' }, 'gas');
