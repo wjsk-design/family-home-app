@@ -523,6 +523,37 @@
 }
 .confirm-check[aria-pressed="true"] .confirm-check__box svg { opacity: 1; }
 
+/* ---- 汎用チェック行(破壊的でない選択用。confirm-checkは削除ロック解除専用の赤なので分離) ---- */
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  width: 100%;
+  min-height: 40px;
+  text-align: left;
+  font-size: var(--text-sub);
+  color: var(--color-text-secondary);
+}
+.check-row__box {
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  border: 1.8px solid var(--color-border);
+  background: var(--color-surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-on-primary);
+  flex-shrink: 0;
+  transition: background var(--t-fast), border-color var(--t-fast);
+}
+.check-row__box svg { opacity: 0; transition: opacity var(--t-fast); }
+.check-row[aria-pressed="true"] .check-row__box {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+.check-row[aria-pressed="true"] .check-row__box svg { opacity: 1; }
+
 /* ---- メンバー色スウォッチ ---- */
 .color-swatch-row { display: flex; gap: var(--spacing-2); flex-wrap: wrap; }
 .color-swatch {

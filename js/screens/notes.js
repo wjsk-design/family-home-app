@@ -14,6 +14,20 @@ App.screens = App.screens || {};
     return n.tags;
   }
 
+  // ---- 検討ノートへの追記(コメント)。Slackのスレッド返信のように本文とは別に積み上げる ----
+  function commentsOf(n) {
+    if (!n.comments) n.comments = [];
+    return n.comments;
+  }
+  function fmtDateTime(ts) {
+    const d = new Date(ts);
+    return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+  }
+
+  // ---- AIに相談する時に貼り付けやすいよう、依頼文つきでコピーする ----
+  const AI_PROMPT_TEMPLATE =
+    "以下は家族で書き溜めているメモです。内容を整理して、次に考えたり決めたりすると良いことをアドバイスしてください。";
+
   // ---- 新規作成中の下書き(画面を離れても消えないよう端末内に残す。世帯同期はしない) ----
   const DRAFT_KEY = "wagaya-home-note-draft-v1";
   function loadDrafts() {
@@ -52,18 +66,29 @@ App.screens = App.screens || {};
     const isEdit = !!note;
     const type = isEdit ? note.type : tab;
     const isDiary = type === "diary";
+    const isThread = type === "thread";
     // 新規作成中に画面を離れても消えないよう、既存の下書きがあれば復元する(編集時は本物のデータがあるので対象外)
     const draft = !isEdit ? loadDrafts()[type] : null;
     // 新規作成でも先にIDを決めておき、「保存」を待たずに下書き段階から写真を追加できるようにする
     const noteId = isEdit ? note.id : (draft && draft.noteId) || App.uid();
     let draftPhotos = isEdit ? photosOf(note).slice() : (draft && draft.photos) || [];
+    // 追記(コメント)は本文と違って下書き保存の対象にしない(保存済みの検討ノートにのみ追記できる)
+    let draftComments = isEdit ? commentsOf(note).slice() : [];
     let uploading = false;
 
-    const titleInput = App.el("input", { type: "text", value: isEdit ? note.title : (draft && draft.title) || "", placeholder: "例:保育園の夏祭り" });
+    const titleInput = App.el("input", {
+      type: "text",
+      value: isEdit ? note.title : (draft && draft.title) || "",
+      placeholder: isThread ? "例:子供の習い事、旅行の行き先" : "例:保育園の夏祭り",
+    });
     const dateInput = App.el("input", { type: "date", value: isEdit ? note.date : (draft && draft.date) || App.date.today() });
     const bodyInput = App.el("textarea", {
       class: "textarea--note-body",
-      placeholder: isDiary ? "今日あったこと、感じたことを自由に。" : "気づいたこと、あとで見直したいことを書いてください",
+      placeholder: isDiary
+        ? "今日あったこと、感じたことを自由に。"
+        : isThread
+        ? "きっかけや今考えていることを書いてください。あとから気づいたことを追記できます。"
+        : "気づいたこと、あとで見直したいことを書いてください",
     });
     if (isEdit) bodyInput.value = note.body;
     else if (draft && draft.body) bodyInput.value = draft.body;
@@ -107,7 +132,7 @@ App.screens = App.screens || {};
     const content = [];
     if (isDiary) content.push(App.field("日付", dateInput));
     else content.push(App.field("タイトル", titleInput));
-    content.push(App.field(isDiary ? "今日のできごと" : "内容", bodyInput));
+    content.push(App.field(isDiary ? "今日のできごと" : isThread ? "最初のメモ" : "内容", bodyInput));
     content.push(linkBtn);
 
     // 写真登録(メモ・日記どちらも。新規作成中でも追加でき、保存すると紐づく)
@@ -198,6 +223,79 @@ App.screens = App.screens || {};
       );
     }
 
+    // 検討ノートへの追記(コメント)。保存済みのノートにのみ、Slackのスレッド返信のように積み上げていく
+    if (isThread && isEdit) {
+      const threadList = App.el("div", { style: "margin-bottom: var(--spacing-3);" });
+
+      const persistComments = () => {
+        App.store.update((st) => {
+          const n = st.notes.find((x) => x.id === note.id);
+          if (n) { n.comments = draftComments.slice(); n.updatedAt = Date.now(); }
+        });
+      };
+
+      const renderThread = () => {
+        threadList.innerHTML = "";
+        if (draftComments.length === 0) {
+          threadList.appendChild(
+            App.el("p", { style: "font-size: var(--text-caption); color: var(--color-text-muted);", text: "まだやりとりはありません。気づいたことを追記していきましょう。" })
+          );
+        }
+        draftComments.forEach((c) => {
+          const delBtn = App.el("button", { class: "icon-btn", "aria-label": "この追記を削除", html: App.icon("x", 14) });
+          delBtn.addEventListener("click", () => {
+            App.confirm({
+              title: "この追記を削除しますか?",
+              message: "この操作は取り消せません。",
+              okLabel: "削除する",
+              danger: true,
+              onOk: () => {
+                draftComments = draftComments.filter((x) => x.id !== c.id);
+                persistComments();
+                renderThread();
+                App.toast("削除しました", "trash");
+              },
+            });
+          });
+          threadList.appendChild(
+            App.el("div", { class: "card", style: "margin-bottom: var(--spacing-2); padding: var(--spacing-3); display: flex; gap: var(--spacing-2); align-items: flex-start; justify-content: space-between;" }, [
+              App.el("div", {}, [
+                App.el("p", { style: "font-size: var(--text-caption); color: var(--color-text-muted); margin-bottom: 2px;", text: fmtDateTime(c.createdAt) }),
+                App.el("p", { style: "font-size: var(--text-sub); white-space: pre-wrap;", text: c.text }),
+              ]),
+              delBtn,
+            ])
+          );
+        });
+      };
+
+      const commentInput = App.el("textarea", { style: "min-height: 64px;", placeholder: "気づいたこと、次に考えたいことを追記できます。" });
+      const commentAddBtn = App.el("button", { class: "btn-secondary", html: App.icon("send", 16) + "<span>追記する</span>" });
+      commentAddBtn.addEventListener("click", () => {
+        const text = commentInput.value.trim();
+        if (!text) return;
+        draftComments.push({ id: App.uid(), text, createdAt: Date.now() });
+        persistComments();
+        commentInput.value = "";
+        renderThread();
+        App.toast("追記しました", "sparkle");
+      });
+
+      renderThread();
+      content.push(
+        App.el("div", { class: "field" }, [
+          App.el("span", { class: "field__label", text: "やりとり" }),
+          threadList,
+          commentInput,
+          App.el("div", { style: "margin-top: var(--spacing-2);" }, [commentAddBtn]),
+        ])
+      );
+    } else if (isThread) {
+      content.push(
+        App.el("p", { style: "font-size: var(--text-caption); color: var(--color-text-muted); margin-top: -8px; margin-bottom: var(--spacing-4);", text: "保存すると、あとから気づいたことをここに追記していけます。" })
+      );
+    }
+
     // タグ(スペース区切りで複数。過去に使ったタグはチップから追加できる)
     const existingTags = [...new Set(App.store.state.notes.flatMap((n) => tagsOf(n)))].sort();
     const tagsInput = App.el("input", { type: "text", value: isEdit ? tagsOf(note).join(" ") : (draft && draft.tags) || "", placeholder: "例: 学校 病院(スペース区切り)" });
@@ -218,8 +316,62 @@ App.screens = App.screens || {};
     }
     content.push(...tagFields);
 
+    // AIに相談する時に貼り付けやすいよう、含める項目を選んでまとめてコピーできるようにする
+    if (isThread) {
+      const copyOpts = { title: true, tags: true, body: true, comments: isEdit, prompt: true };
+      const makeCheckRow = (key, label) => {
+        const box = App.el("span", { class: "check-row__box", html: App.icon("check", 14) });
+        const row = App.el("button", {
+          class: "check-row",
+          type: "button",
+          "aria-pressed": String(copyOpts[key]),
+          onclick: () => {
+            copyOpts[key] = !copyOpts[key];
+            row.setAttribute("aria-pressed", String(copyOpts[key]));
+          },
+        }, [box, App.el("span", { text: label })]);
+        return row;
+      };
+      const checkRows = [
+        makeCheckRow("title", "タイトル"),
+        makeCheckRow("tags", "タグ"),
+        makeCheckRow("body", "本文"),
+      ];
+      if (isEdit) checkRows.push(makeCheckRow("comments", "やりとり(コメント)"));
+      checkRows.push(makeCheckRow("prompt", "AIへの依頼文を添える"));
+
+      const copyBtn = App.el("button", { class: "btn-secondary", html: App.icon("copy", 16) + "<span>コピーする</span>" });
+      copyBtn.addEventListener("click", () => {
+        const parts = [];
+        if (copyOpts.prompt) parts.push(AI_PROMPT_TEMPLATE);
+        const titleVal = titleInput.value.trim();
+        const tagsVal = tagsInput.value.trim().split(/\s+/).filter(Boolean);
+        const bodyVal = bodyInput.value.trim();
+        if (copyOpts.title && titleVal) parts.push(`【タイトル】\n${titleVal}`);
+        if (copyOpts.tags && tagsVal.length) parts.push(`【タグ】\n${tagsVal.join(" ")}`);
+        if (copyOpts.body && bodyVal) parts.push(`【本文】\n${bodyVal}`);
+        if (copyOpts.comments && draftComments.length) {
+          parts.push(`【やりとり】\n${draftComments.map((c) => `- ${fmtDateTime(c.createdAt)} ${c.text}`).join("\n")}`);
+        }
+        const text = parts.join("\n\n");
+        if (!text) { App.toast("コピーする内容がありません", "info"); return; }
+        App.copyText(text)
+          .then(() => App.toast("コピーしました。AIアプリに貼り付けてください", "sparkle"))
+          .catch(() => App.toast("コピーできませんでした", "info"));
+      });
+
+      content.push(
+        App.el("div", { class: "field" }, [
+          App.el("span", { class: "field__label", text: "AI相談用にコピー" }),
+          App.el("div", { style: "display: flex; flex-direction: column; gap: var(--spacing-2);" }, checkRows),
+          App.el("div", { style: "margin-top: var(--spacing-3);" }, [copyBtn]),
+        ])
+      );
+    }
+
     // メモは「やること」に近い内容になることがあるので、ワンタップで移せる導線を置く
-    if (isEdit && !isDiary) {
+    // (検討ノートはやりとり(コメント)が失われてしまうため対象外)
+    if (isEdit && !isDiary && !isThread) {
       const convert = App.el("button", {
         class: "btn-secondary",
         style: "margin-top: var(--spacing-3);",
@@ -247,7 +399,7 @@ App.screens = App.screens || {};
       const del = App.el("button", { class: "btn-danger-text", html: App.icon("trash", 16) + "<span>削除する</span>" });
       del.addEventListener("click", () => {
         App.confirm({
-          title: isDiary ? "日記を削除しますか?" : "メモを削除しますか?",
+          title: isDiary ? "日記を削除しますか?" : isThread ? "検討ノートを削除しますか?" : "メモを削除しますか?",
           message: "この操作は取り消せません。",
           okLabel: "削除する",
           danger: true,
@@ -267,7 +419,9 @@ App.screens = App.screens || {};
     content.push(App.el("div", { class: "note-save-bar" }, [saveBtn]));
 
     const s = App.sheet(
-      isEdit ? (isDiary ? "日記を編集" : "メモを編集") : isDiary ? "今日の日記" : "メモを追加",
+      isEdit
+        ? isDiary ? "日記を編集" : isThread ? "検討ノートを編集" : "メモを編集"
+        : isDiary ? "今日の日記" : isThread ? "検討ノートを追加" : "メモを追加",
       content
     );
     s.node.classList.add("sheet--note-edit");
@@ -312,6 +466,7 @@ App.screens = App.screens || {};
       const segment = App.el("div", { class: "segment", role: "tablist" });
       [
         { key: "memo", label: "メモ" },
+        { key: "thread", label: "検討" },
         { key: "diary", label: "日記" },
       ].forEach((t) => {
         segment.appendChild(
@@ -343,9 +498,14 @@ App.screens = App.screens || {};
         tagFilter = null;
       }
 
+      // 検討ノートは日付でなく「最近やりとりがあった順」で並べる
       const notes = tabNotes
         .filter((n) => !tagFilter || tagsOf(n).includes(tagFilter))
-        .sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+        .sort((a, b) =>
+          tab === "thread"
+            ? (b.updatedAt || 0) - (a.updatedAt || 0)
+            : (b.date || "").localeCompare(a.date || "")
+        );
 
       const section = App.el("section", { class: "section", style: "margin-top: 0;" });
       if (notes.length === 0) {
@@ -353,6 +513,8 @@ App.screens = App.screens || {};
           App.el("div", { class: "card card--lg" }, [
             tab === "memo"
               ? App.emptyState("note", "メモはまだありません", "覚えておきたいことを気軽に残しましょう。")
+              : tab === "thread"
+              ? App.emptyState("sparkle", "検討ノートはまだありません", "気になることを書き留めて、あとから気づいたことを追記していきましょう。")
               : App.emptyState("heart", "日記はまだありません", "一行だけでも、あとで宝物になります。"),
           ])
         );
@@ -385,6 +547,36 @@ App.screens = App.screens || {};
           );
         });
         section.appendChild(board);
+      } else if (tab === "thread") {
+        // 検討ノート:タイトル主役のカードリスト(やりとり件数を添える)
+        notes.forEach((n) => {
+          const commentCount = commentsOf(n).length;
+          section.appendChild(
+            App.el("button", {
+              class: "card card--lg card--tappable note-card",
+              style: "width: 100%; text-align: left; display: block;",
+              "aria-label": `${n.title || "検討ノート"}を開く`,
+              onclick: () => openNoteSheet(n),
+            }, [
+              n.title ? App.el("p", { class: "note-card__title", text: n.title }) : null,
+              App.el("p", { class: "note-card__body" }, [
+                App.firstUrl(n.body) ? App.el("span", { class: "link-badge", html: App.icon("link", 12) }) : null,
+                n.body,
+              ]),
+              commentCount
+                ? App.el("p", { class: "note-sticky__meta", html: App.icon("send", 12) + `<span>${commentCount}件のやりとり</span>` })
+                : null,
+              n.photos && n.photos.length
+                ? App.el("img", { src: n.photos[0].url, alt: "", class: "note-card__thumb" })
+                : null,
+              n.tags && n.tags.length
+                ? App.el("div", { style: "display: flex; flex-wrap: wrap; gap: 4px; margin-top: var(--spacing-2);" },
+                    n.tags.map((t) => App.el("span", { class: "badge badge--muted", text: t }))
+                  )
+                : null,
+            ])
+          );
+        });
       } else {
         // 日記:日付主役のタイムライン
         notes.forEach((n) => {
@@ -414,7 +606,8 @@ App.screens = App.screens || {};
       }
       container.appendChild(section);
 
-      container.appendChild(App.fab(tab === "memo" ? "メモを追加" : "日記を書く", () => openNoteSheet(null)));
+      const fabLabel = tab === "memo" ? "メモを追加" : tab === "thread" ? "検討ノートを追加" : "日記を書く";
+      container.appendChild(App.fab(fabLabel, () => openNoteSheet(null)));
     },
   };
 })();

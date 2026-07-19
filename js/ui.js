@@ -144,6 +144,27 @@ window.App = window.App || {};
     });
   };
 
+  // ---- クリップボードへのコピー(古いLINE内ブラウザ向けにexecCommandへのフォールバック付き) ----
+  App.copyText = function (text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      return navigator.clipboard.writeText(text);
+    }
+    return new Promise((resolve, reject) => {
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        const ok = document.execCommand("copy");
+        document.body.removeChild(ta);
+        ok ? resolve() : reject(new Error("copy failed"));
+      } catch (e) { reject(e); }
+    });
+  };
+
   // ---- Bottom Sheet ----
   App.sheet = function (title, contentNodes) {
     const root = document.getElementById("overlay-root");
