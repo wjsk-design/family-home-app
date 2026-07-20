@@ -198,7 +198,7 @@ window.App = window.App || {};
     main.appendChild(
       App.el("div", { class: "sync-banner" }, [
         App.el("span", { class: "sync-banner__icon", html: App.icon("info", 16) }),
-        App.el("span", { class: "sync-banner__text", text: "この内容は最新でない場合があります。追加・編集を家族と共有するにはLINEのトークから開いてください。" }),
+        App.el("span", { class: "sync-banner__text", text: "この内容は開いた時点のものです(自動更新はされません)。追加・編集はLINEのトークから開いてください。" }),
         openLineUrl
           ? App.el("a", { class: "sync-banner__link", href: openLineUrl, target: "_blank", rel: "noopener noreferrer", text: "LINEを開く" })
           : null,
