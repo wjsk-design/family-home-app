@@ -22,6 +22,20 @@ window.App = window.App || {};
       try {
         await window.liff.init({ liffId: id });
         if (!window.liff.isLoggedIn()) {
+          // iPhoneの「ホーム画面に追加」から開いた場合(スタンドアロン表示)は
+          // liff.login()を呼ばない。ホーム画面アイコンは独立した保存領域を持つため
+          // ログインが必要になりがちな上、LINEアプリへの引き継ぎから戻る先が
+          // 元のアイコンではなく新しいSafariタブになってしまい、アイコン側は
+          // 何度タップしても同じログイン画面に迷い込む(2026-07-20、実機で確認)。
+          // この状態ではリダイレクトを試みず、手元のキャッシュデータのまま表示する
+          const isStandalone = window.navigator.standalone === true
+            || (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches);
+          if (isStandalone) {
+            App.liffState.mode = "mock";
+            onReady();
+            App.toast("最新の状態にするには、LINEのトークから開いてください", "info");
+            return;
+          }
           window.liff.login();
           return;
         }
