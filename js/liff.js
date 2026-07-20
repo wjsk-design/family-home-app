@@ -38,6 +38,22 @@ window.App = window.App || {};
             App.liffState.needsLogin = true;
             onReady();
             App.toast("最新の状態にするには、LINEのトークから開いてください", "info");
+
+            // ログイン無しでも「見るだけ」は本物のデータを取得する(js/sync.jsの
+            // pullReadOnly)。ホーム画面用リンクのクエリパラメータ(?hh=世帯ID、
+            // js/screens/household.jsで発行)か、以前の同期で既にローカルへ
+            // 保存済みの世帯IDを使う。どちらも無ければ手元のキャッシュのまま
+            const hhFromUrl = new URLSearchParams(location.search).get("hh");
+            const householdId = hhFromUrl || App.store.state.settings.householdId;
+            if (hhFromUrl && App.store.state.settings.householdId !== hhFromUrl) {
+              App.store.state.settings.householdId = hhFromUrl;
+              App.store.saveLocal();
+            }
+            if (householdId && App.sync && App.sync.pullReadOnly) {
+              App.sync.pullReadOnly(householdId)
+                .then((r) => { if (r && r.updated && App.refresh) App.refresh(); })
+                .catch(() => { /* 取得できなくても手元のキャッシュのまま表示を続ける */ });
+            }
             return;
           }
           window.liff.login();

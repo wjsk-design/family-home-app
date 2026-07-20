@@ -105,6 +105,23 @@ window.App = window.App || {};
       return { updated: false };
     },
 
+    // ログイン無し(idToken不要)で、世帯IDだけを使って最新データを読み取る。
+    // ホーム画面に追加したアイコンでLIFFログインが安定しない場合(js/liff.js)の
+    // 「見るだけ」専用の経路。書き込みは一切行わない。
+    // syncedAtは更新しない(次に本物のログインができた時、サーバーの最新データと
+    // 正しく比較できるようにするため。ここを更新すると本物のpullが取りこぼす恐れがある)
+    async pullReadOnly(householdId) {
+      const url = cfg().SYNC_URL;
+      if (!url || !householdId) return { skipped: true };
+      const res = await fetch(`${url}?action=pullReadOnly&householdId=${encodeURIComponent(householdId)}`);
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || "取得に失敗しました");
+      if (!data.data) return { updated: false };
+      this._applyRemote(() => { this._merge(data.data); });
+      App.store.saveLocal();
+      return { updated: true };
+    },
+
     async _pushNow() {
       if (!this.enabled()) return;
       this._pushing = true;

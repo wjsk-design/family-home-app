@@ -55,6 +55,25 @@ function doGet(e) {
   var action = e && e.parameter && e.parameter.action;
   if (!action) return json({ ok: true, service: 'kurashi-note backend', ts: Date.now() });
 
+  // 世帯ID(householdId)さえ分かれば読み取れる、閲覧専用の軽量エンドポイント(ログイン不要)。
+  // iPhoneの「ホーム画面に追加」から開いた場合、LIFFログインが安定しないため
+  // (js/liff.js参照)、「見るだけ」はこちらでログイン無しに最新データを取得する。
+  // 書き込みは一切できない。householdIdはUUID(Utilities.getUuid())で実質推測不可能なため、
+  // 閲覧専用アクセスの制御としては妥当な強度と判断(書き込みも可能な招待コードより短い
+  // 文字列ではない)
+  if (action === 'pullReadOnly') {
+    try {
+      var hh = String((e.parameter && e.parameter.householdId) || '');
+      if (!hh) throw new Error('householdIdが必要です');
+      var rows = readAll(sheet());
+      var target = rows.filter(function (r) { return r.householdId === hh; })[0];
+      if (!target) return json({ ok: true, data: null, updatedAt: 0 });
+      return json({ ok: true, data: target.data, updatedAt: target.updatedAt });
+    } catch (err) {
+      return json({ ok: false, error: String((err && err.message) || err) });
+    }
+  }
+
   // ChatGPT(GPT Actions)からの読み取り専用アクセス。LINEログインが無いのでトークンで認証する
   try {
     verifyConsultToken(e.parameter.token);

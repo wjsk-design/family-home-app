@@ -129,6 +129,25 @@ App.screens = App.screens || {};
         run(syncBtn, "同期中…", async () => { await App.sync.pull(); await App.sync._pushNow(); }, "同期しました")
       );
 
+      // ホーム画面に追加したアイコンはLINEログインが安定しないため(js/liff.js参照)、
+      // 世帯IDを含んだ専用リンクを使うと、ログイン無しでも「見るだけ」は最新データを
+      // 表示できる(js/sync.jsのpullReadOnly)。既に追加済みのアイコンがあれば、
+      // このリンクを開いて追加し直してもらう案内をする
+      const homeScreenUrl = `${location.origin}${location.pathname}?hh=${encodeURIComponent(st.settings.householdId)}#calendar`;
+      const copyLinkBtn = App.el("button", {
+        class: "btn-secondary",
+        style: "margin-top: var(--spacing-3);",
+        html: App.icon("link", 16) + "<span>ホーム画面用リンクをコピー</span>",
+      });
+      copyLinkBtn.addEventListener("click", async () => {
+        try {
+          await navigator.clipboard.writeText(homeScreenUrl);
+          App.toast("リンクをコピーしました");
+        } catch (e) {
+          App.toast("コピーできませんでした", "info");
+        }
+      });
+
       const leaveBtn = App.el("button", { class: "btn-danger-text", style: "margin-top: var(--spacing-3);", html: App.icon("trash", 16) + "<span>共有をやめる</span>" });
       leaveBtn.addEventListener("click", () => {
         App.confirm({
@@ -142,6 +161,15 @@ App.screens = App.screens || {};
 
       container.appendChild(App.el("section", { class: "section" }, [
         card([syncBtn, leaveBtn]),
+      ]));
+
+      // 「ホーム画面に追加」機能を使っている場合のみ関係するので、専用セクションとして分ける
+      container.appendChild(App.el("section", { class: "section" }, [
+        App.sectionHeader("ホーム画面のアイコン", { icon: "home" }),
+        card([
+          note("iPhoneの「ホーム画面に追加」で開いている場合、LINEログインが不安定なことがあります。下のリンクから追加し直すと、ログイン無しでも予定などを最新の状態で見られるようになります(追加・編集は引き続きLINEのトークから行ってください)。すでに追加済みのアイコンがあれば、一度削除してからこのリンクで追加し直してください。"),
+          copyLinkBtn,
+        ]),
       ]));
     },
   };
