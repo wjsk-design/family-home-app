@@ -168,9 +168,20 @@ window.App = window.App || {};
   // ---- Bottom Sheet ----
   App.sheet = function (title, contentNodes) {
     const root = document.getElementById("overlay-root");
+    // ホーム画面アイコンでログイン誘導をスキップした状態(js/liff.js)では保存操作
+    // 自体をブロックする(App.store.update参照)。ただし保存ボタンを押すまで
+    // 気づけないのはUXとして良くないので、シートを開いた瞬間・入力欄より前に
+    // 案内を出す(入力し始める前に気づける)
+    const needsLoginNotice = App.liffState && App.liffState.needsLogin
+      ? App.el("div", { class: "sheet-notice" }, [
+          App.el("span", { class: "sheet-notice__icon", html: App.icon("info", 15) }),
+          App.el("span", { class: "sheet-notice__text", text: "この内容は保存できません。追加・編集はLINEのトークから開いて行ってください。" }),
+        ])
+      : null;
     const sheet = App.el("div", { class: "sheet", role: "dialog", "aria-modal": "true", "aria-label": title, tabindex: "-1" }, [
       App.el("div", { class: "sheet__grip" }),
       App.el("h2", { class: "sheet__title", text: title }),
+      needsLoginNotice,
       ...[].concat(contentNodes),
     ]);
     const overlay = App.el("div", { class: "overlay" }, [sheet]);

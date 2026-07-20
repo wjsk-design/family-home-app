@@ -141,7 +141,7 @@ App.screens = App.screens || {};
       });
       copyLinkBtn.addEventListener("click", async () => {
         try {
-          await navigator.clipboard.writeText(homeScreenUrl);
+          await App.copyText(homeScreenUrl);
           App.toast("リンクをコピーしました");
         } catch (e) {
           App.toast("コピーできませんでした", "info");

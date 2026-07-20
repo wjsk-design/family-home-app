@@ -754,3 +754,21 @@
   font-weight: 600;
   white-space: nowrap;
 }
+
+/* ---- シート内の保存不可案内(ホーム画面アイコンでログイン誘導をスキップした状態) ---- */
+.sheet-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-2);
+  margin: 0 0 var(--spacing-4);
+  padding: var(--spacing-3);
+  border-radius: var(--radius-md);
+  background: var(--color-info-bg);
+  color: var(--color-info);
+}
+.sheet-notice__icon { flex-shrink: 0; display: inline-flex; margin-top: 1px; }
+.sheet-notice__text {
+  font-size: var(--text-caption);
+  line-height: var(--line-height);
+  color: var(--color-text-secondary);
+}
