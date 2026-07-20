@@ -34,6 +34,20 @@
 | 中古Mac(Intel/M1世代) | 約3〜6万円 | 予算重視ならアリ。ビルドはやや遅い |
 | クラウドMac(MacinCloud等) | 月$20〜30 | 初期費用は抑えられるが月額が積み重なる。対話的な開発にはやや不向き |
 
+### iPadだけで済ませられないか(2026-07-20追記、渡辺さんはiPad所有済み)
+
+**Swift Playgrounds 4(iPadOS 15.2以降)を使えば、Macを使わずiPadだけでアプリを作りApp Store Connectへ提出するところまで可能**。これ自体は実例のある本当の話(下記ソース参照)。Apple Developer Program($99/年)はMacでもiPadでもどのみち必要で変わらない。
+
+ただし**今回の用途(LINE公式SDKの組み込み)には赤信号がある**:
+
+> Swift Playgroundsは SwiftPM を内蔵していないため、**外部の依存パッケージがあるSwift Packageや、別言語のソースコードのビルドが必要なものには対応できない**([Zenn記事](https://zenn.dev/kebo/articles/d79445723050f22aee72)より)
+
+LINE公式SDK(LineSDKSwift)自体はSwift Package Managerで配布されているが、**SDKがさらに別パッケージに依存している場合、Swift Playgroundsでは解決できずビルドが通らない可能性がある**。「LINE SDK + Swift Playgrounds」を実際にやった実例は調査時点で見つからず、**前例のない組み合わせ**。
+
+**推奨する進め方**: iPadは追加コスト無しで試せるので、いきなり全部作り込まず、**最初の10分で「LINE SDKをSwift Playgroundsのパッケージとして追加し、エラー無くビルドできるか」だけを確認する**(スモークテスト)。ここで通れば続行、詰まればMac購入へ切り替える。
+
+参考: [iPadだけでアプリ開発をした話 - Qiita](https://qiita.com/matsuji/items/42140be17b51fd1e3cfd) / [iPadでアプリを作ってみる~Swift Playground 4.0~ - Qiita](https://qiita.com/tosh_3/items/6cf0cd17fb83ace4460b) / [Swift Playgrounds (iPad) で外部 Swift Package を使う方法 - Zenn](https://zenn.dev/kebo/articles/d79445723050f22aee72)
+
 ### 実装方針の選択肢
 
 1. **フルネイティブ書き直し(Swift/SwiftUI)**: 現状のJS資産(7000行超)を全部作り直すことになり非現実的
@@ -48,14 +62,14 @@
 2. **TestFlight**: 軽い審査はあるが数日で通ることが多い。メール招待で最大1万人まで配布可能
 3. **App Store公開**: ストア掲載用の画像・プライバシーポリシー・審査対応が別途必要。**「単なるWebサイトのラッパー」とみなされ審査に落ちるリスク**(Appleガイドライン4.2 最低限の機能性)が実際にある。キャリア形成・経験目的なら挑戦する価値はある
 
-## 現時点の推奨方針(2026-07-20)
+## 現時点の推奨方針(2026-07-20更新)
 
-- 配布ゴールは**未定**(2026-07-20時点)。まず「家族2人用」を最初のゴールに設定し、動くものができてから公開を検討する進め方を提案し、渡辺さんも合意
-- 次のアクション: **渡辺さんがMacを確保する**(新規購入想定)。確保でき次第、以下の順で着手する
+- 配布ゴールは**未定**。まず「家族2人用」を最初のゴールに設定し、動くものができてから公開を検討する進め方を提案し、渡辺さんも合意
+- **Mac新規購入より先に、手持ちのiPad(Swift Playgrounds)で試す方針に変更**(2026-07-20)。次のアクション:
   1. Apple Developer Program登録
-  2. LINE DevelopersでiOSプラットフォーム追加登録(既存チャネル利用)
-  3. Xcodeで薄いラッパー作成(WKWebView + LINEネイティブSDKログイン橋渡し)。バックエンド呼び出し(pull/push)は既存のGAS APIをそのまま利用
-  4. 渡辺さん・パートナーの端末にXcodeから直接インストールして動作確認
+  2. **iPadのSwift Playgroundsで、LINE SDK(LineSDKSwift)をパッケージ追加してビルドが通るかスモークテスト**(ここが分岐点。通らなければMac購入へ)
+  3. 通れば: LINE DevelopersでiOSプラットフォーム追加登録 → Swift PlaygroundsでWKWebView+ログイン橋渡しを作成 → 渡辺さん・パートナーの端末で動作確認
+  4. 通らなければ: Mac mini購入(約10万円)を検討し、Xcodeで同じ作業を行う
   5. (任意)手応えが良ければTestFlight・App Store公開を検討
 
 ## 関連
